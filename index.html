@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mohre — The Smart Shopping Hub</title>
+  <title>Mohre | The Smart Shopping Hub</title>
   <meta name="description" content="Hand-selected luxury fashion pieces. Order in one tap via WhatsApp — delivered across Kenya." />
   <meta property="og:title" content="Mohre Hub — The Curated Edit" />
   <meta property="og:description" content="Hand-selected luxury fashion pieces. Order in one tap via WhatsApp — delivered across Kenya." />
@@ -132,68 +132,7 @@
 <main id="mainContent">
   <div class="section-header">
     <h2 class="section-title" id="sectionTitle">All Collection</h2>
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-      <span class="section-count" id="sectionCount" aria-live="polite"></span>
-
-      <!-- Price filter dropdown -->
-      <div class="price-filter-wrapper">
-        <button class="price-filter-trigger" onclick="togglePriceFilter()"
-          id="priceFilterTrigger" aria-haspopup="true" aria-expanded="false">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-          </svg>
-          <span id="priceFilterLabel">All prices</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
-
-        <div class="price-filter-dropdown" id="priceFilterDropdown" role="dialog" aria-label="Price filter">
-          <div class="price-filter-header">
-            <span>Filter by price</span>
-            <button class="price-reset" onclick="clearPriceFilter()">Reset</button>
-          </div>
-          <div class="price-inputs">
-            <div class="price-input-group">
-              <label for="priceMinInput">Min</label>
-              <input type="number" id="priceMinInput" placeholder="0" value="0"
-                onchange="updatePriceFromInput()" aria-label="Minimum price" />
-            </div>
-            <span class="price-dash">—</span>
-            <div class="price-input-group">
-              <label for="priceMaxInput">Max</label>
-              <input type="number" id="priceMaxInput" placeholder="50000" value="50000"
-                onchange="updatePriceFromInput()" aria-label="Maximum price" />
-            </div>
-          </div>
-          <div class="price-slider-container">
-            <div class="price-slider-track"></div>
-            <div class="price-slider-fill" id="priceRangeFill"></div>
-            <input type="range" class="price-slider" id="priceMinSlider"
-              min="0" max="50000" value="0" step="500" aria-label="Minimum price slider" />
-            <input type="range" class="price-slider" id="priceMaxSlider"
-              min="0" max="50000" value="50000" step="500" aria-label="Maximum price slider" />
-          </div>
-          <div class="price-presets">
-            <button onclick="setPricePreset(0, 5000)">Under KSh 5K</button>
-            <button onclick="setPricePreset(5000, 15000)">KSh 5K – 15K</button>
-            <button onclick="setPricePreset(15000, 30000)">KSh 15K – 30K</button>
-            <button onclick="setPricePreset(30000, 50000)">KSh 30K+</button>
-          </div>
-        </div>
-      </div><!-- /.price-filter-wrapper -->
-
-      <select class="sort-select" id="sortSelect"
-        onchange="renderProducts()" aria-label="Sort products">
-        <option value="default">Sort: Default</option>
-        <option value="price-asc">Price: Low → High</option>
-        <option value="price-desc">Price: High → Low</option>
-        <option value="newest">Newest first</option>
-        <option value="popular">Most Popular</option>
-      </select>
-    </div>
+    <span class="section-count" id="sectionCount" aria-live="polite"></span>
   </div>
 
   <!-- Product grid (populated by products.js) -->
@@ -527,13 +466,7 @@
         </svg>
         Dark mode
       </button>
-      <a href="https://wa.me/254717545221" target="_blank" rel="noopener noreferrer"
-        class="footer-wa-btn" aria-label="Chat on WhatsApp">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-        </svg>
-        WhatsApp
-      </a>
+
     </div>
   </div>
 </footer>

@@ -77,7 +77,7 @@ function openDetailPanel(id) {
       <div class="detail-field-label">Colour</div>
       <div class="detail-colors" id="detailColors">
         ${variants.map((v, i) => `
-          <button class="detail-color-chip ${i === 0 ? 'selected' : ''}"
+          <button class="detail-color-chip"
             data-color-name="${escapeHtml(v.name || '')}"
             data-photo="${escapeHtml(v.photo || p.photo || '')}"
             data-variant-idx="${i}"
@@ -88,8 +88,6 @@ function openDetailPanel(id) {
         `).join('')}
       </div>
     </div>` : '';
-
-  if (hasVariants && variants[0]) detailSelectedColor = variants[0].name || null;
 
   const inWishlist = isInWishlist(p.id);
 

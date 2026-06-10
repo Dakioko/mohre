@@ -1,14 +1,15 @@
-// ─── FILTER / SORT LOGIC ──────────────────────────────────────────────────
+// ─── FILTER LOGIC ─────────────────────────────────────────────────────────
+
+// Slideshow timer registry — declared here so swapVariant can access it
+const _slideshowTimers = new Map();
 
 /**
- * Return the filtered and sorted product list based on current UI state.
+ * Return the filtered product list based on current category and search.
  */
 function getFiltered() {
-  const sort = document.getElementById("sortSelect")?.value || "default";
-
   let base =
-    currentFilter === "All"  ? products.filter(p => !p.isSold) :
-    currentFilter === "New"  ? products.filter(p => p.isNew && !p.isSold) :
+    currentFilter === "All" ? products.filter(p => !p.isSold) :
+    currentFilter === "New" ? products.filter(p => p.isNew && !p.isSold) :
     products.filter(p => p.category === currentFilter && !p.isSold);
 
   if (currentSearch) {
@@ -20,33 +21,6 @@ function getFiltered() {
     );
   }
 
-  if (priceFilterActive) {
-    base = base.filter(p => Number(p.price) >= priceMinVal && Number(p.price) <= priceMaxVal);
-  }
-
-  // Calibrate price slider max to actual product range (once per load)
-  if (products.length && !window._priceCalibrated) {
-    window._priceCalibrated = true;
-    const maxPrice = Math.max(...products.map(p => Number(p.price) || 0));
-    const rounded = Math.ceil(maxPrice / 1000) * 1000 + 2000;
-    ['priceMinSlider', 'priceMaxSlider'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.max = rounded;
-        if (id === 'priceMaxSlider') {
-          el.value = rounded;
-          priceMaxVal = rounded;
-        }
-      }
-    });
-    const label = document.getElementById("priceFilterLabel");
-    if (label && label.textContent === "All prices") updatePriceRange();
-  }
-
-  if (sort === "price-asc")  return [...base].sort((a, b) => a.price - b.price);
-  if (sort === "price-desc") return [...base].sort((a, b) => b.price - a.price);
-  if (sort === "newest")     return [...base].sort((a, b) => b.id - a.id);
-  if (sort === "popular")    return [...base].sort((a, b) => (b.views || 0) - (a.views || 0));
   return base;
 }
 
@@ -165,6 +139,9 @@ function renderProducts() {
   // Admin controls (visible whenever logged in as admin)
   const isAdmin = document.body.classList.contains("is-admin");
   if (isAdmin) addAdminControls();
+
+  // Start crossfade slideshows on cards with multiple images
+  initCardSlideshows();
 }
 
 // ─── ADMIN OVERLAY CONTROLS ON CARDS ─────────────────────────────────────
@@ -188,6 +165,11 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
   const card = document.querySelector(`.product-card[data-id="${productId}"]`);
   if (!card) return;
 
+  // Pause slideshow for this card when user manually picks a color
+  card._swatchSwapped = true;
+  clearInterval(_slideshowTimers.get(productId));
+  _slideshowTimers.delete(productId);
+
   // Update active swatch
   card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === variantIdx));
 
@@ -201,6 +183,69 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
       img.onload = () => imgWrap?.classList.add('img-loaded');
     }
   }
+}
+
+// ─── CARD CROSSFADE SLIDESHOW ─────────────────────────────────────────────
+function initCardSlideshows() {
+  // Clear any existing timers from previous render
+  _slideshowTimers.forEach(timerId => clearInterval(timerId));
+  _slideshowTimers.clear();
+
+  products.filter(p => !p.isSold).forEach(p => {
+    // Collect all images for this product
+    const images = [];
+    if (p.photo) images.push(p.photo);
+    try {
+      if (p.photos) {
+        const extras = JSON.parse(p.photos);
+        extras.forEach(src => { if (src && src !== p.photo) images.push(src); });
+      }
+    } catch (e) {}
+    try {
+      if (p.variants) {
+        const variants = JSON.parse(p.variants);
+        variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
+      }
+    } catch (e) {}
+
+    if (images.length < 2) return; // nothing to cycle
+
+    const imgEl = document.getElementById(`img${p.id}`);
+    if (!imgEl) return;
+
+    let idx = 0;
+    const timerId = setInterval(() => {
+      const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
+      if (!card || card._swatchSwapped) return;
+
+      idx = (idx + 1) % images.length;
+      const img = document.getElementById(`img${p.id}`);
+      if (!img) return;
+
+      img.style.transition = 'opacity 0.6s ease';
+      img.style.opacity = '0';
+      setTimeout(() => {
+        img.src = images[idx];
+        img.onload = () => { img.style.opacity = '1'; };
+        setTimeout(() => { img.style.opacity = '1'; }, 100);
+      }, 600);
+    }, 3500);
+
+    _slideshowTimers.set(p.id, timerId);
+
+    // Pause on hover or touch
+    const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
+    if (card) {
+      card.addEventListener('mouseenter', () => {
+        clearInterval(_slideshowTimers.get(p.id));
+        _slideshowTimers.delete(p.id);
+      }, { once: true });
+      card.addEventListener('touchstart', () => {
+        clearInterval(_slideshowTimers.get(p.id));
+        _slideshowTimers.delete(p.id);
+      }, { passive: true, once: true });
+    }
+  });
 }
 
 // ─── HERO GALLERY ─────────────────────────────────────────────────────────
@@ -222,7 +267,6 @@ function populateHeroGallery() {
 
 // ─── LOAD PRODUCTS ────────────────────────────────────────────────────────
 async function loadProducts() {
-  window._priceCalibrated = false; // reset on each load
   showSkeletons(6);
   try {
     products = await apiGet();
@@ -231,18 +275,6 @@ async function loadProducts() {
     checkProductParam();
     updateFilterCounts();
     applySavedFilters();
-
-    // Set price slider range to actual product max
-    const maxPrice = Math.max(...products.map(p => Number(p.price) || 0));
-    const rounded = Math.ceil(maxPrice / 1000) * 1000 + 2000;
-    const minSlider = document.getElementById("priceMinSlider");
-    const maxSlider = document.getElementById("priceMaxSlider");
-    if (minSlider && maxSlider) {
-      minSlider.max = rounded;
-      maxSlider.max = rounded;
-      maxSlider.value = rounded;
-      updatePriceRange();
-    }
   } catch (e) {
     console.error('Failed to load products:', e);
     const grid = document.getElementById("productGrid");

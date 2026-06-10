@@ -1332,30 +1332,67 @@ input:focus, select:focus, textarea:focus {
   transition: opacity 0.2s;
 }
 
-/* Admin color picker */
-.color-picker-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
+/* Admin color variant — name-first flow */
+.color-preview-wrap {
+  position: relative;
+  flex-shrink: 0;
 }
-
-.color-swatch-input {
+.color-preview-swatch {
   width: 36px;
   height: 36px;
-  padding: 2px;
-  border: 1px solid var(--border);
   border-radius: 6px;
+  border: 1.5px solid var(--border);
   cursor: pointer;
-  background: none;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.color-preview-swatch:hover { border-color: var(--primary); }
+
+.variant-name-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
-.color-hex-label {
-  font-size: 0.5rem;
-  color: var(--muted);
-  font-family: monospace;
-  letter-spacing: 0;
-  line-height: 1;
+.color-suggestions {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.color-suggestions:empty { display: none; }
+
+.color-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: var(--primary);
+  font-family: var(--font-body);
+  transition: border-color 0.1s, background 0.1s;
+}
+.color-suggestion-chip:hover { border-color: var(--primary); background: var(--surface); }
+
+.chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
 }
 
 .add-variant-btn { background: none; border: 1px dashed var(--border); border-radius: 2px; padding: 0.4rem; font-size: 0.7rem; color: var(--muted); cursor: pointer; width: 100%; margin-top: 0.3rem; }

@@ -30,16 +30,21 @@ function renderWishlistBody() {
     return;
   }
 
-  const wishlistProducts = wishlist.map(id => products.find(p => p.id === id)).filter(Boolean);
+  const wishlistProducts = wishlist.map(w => {
+    const p = products.find(x => x.id === w.id);
+    if (!p) return null;
+    return { ...p, _wishlistPhoto: w.photo || p.photo, _wishlistColor: w.color };
+  }).filter(Boolean);
   body.innerHTML = wishlistProducts.map(p => `
     <div class="cart-item">
       <img class="cart-item-img"
-        src="${escapeHtml(p.photo || '')}"
+        src="${escapeHtml(p._wishlistPhoto || '')}"
         alt="${escapeHtml(p.name)}"
         onerror="this.style.background='var(--border)';this.src=''"
         style="background:var(--border)">
       <div class="cart-item-info">
         <p class="cart-item-name">${escapeHtml(p.name)}</p>
+        ${p._wishlistColor ? `<p class="cart-item-meta">${escapeHtml(p._wishlistColor)}</p>` : ''}
         <p class="cart-item-price">KSh ${Number(p.price).toLocaleString()}</p>
         <button class="wishlist-item-view-btn" onclick="closeWishlist();openDetailPanel(${p.id})">
           View item →
@@ -68,18 +73,30 @@ function closeWishlist() {
 }
 
 // ─── WISHLIST STATE ────────────────────────────────────────────────────────
+// Migrate legacy plain-ID arrays to object format {id, photo, color}
+(function migrateWishlist() {
+  if (wishlist.length && typeof wishlist[0] !== 'object') {
+    wishlist = wishlist.map(id => ({ id, photo: null, color: null }));
+    try { localStorage.setItem('wishlist', JSON.stringify(wishlist)); } catch (e) {}
+  }
+})();
+
 function saveWishlist() {
   try { localStorage.setItem('wishlist', JSON.stringify(wishlist)); } catch (e) {}
 }
 
-function toggleWishlist(productId) {
-  const idx = wishlist.indexOf(productId);
+function toggleWishlist(productId, variantPhoto, colorName) {
+  const idx = wishlist.findIndex(w => w.id === productId);
   if (idx > -1) {
     wishlist.splice(idx, 1);
-    showToast("Removed from wishlist");
   } else {
-    wishlist.push(productId);
-    showToast("Saved to wishlist ❤️");
+    // Resolve variant photo if not passed in
+    let photo = variantPhoto || null;
+    if (!photo) {
+      const p = products.find(x => x.id === productId);
+      photo = p ? (p.photo || null) : null;
+    }
+    wishlist.push({ id: productId, photo, color: colorName || null });
   }
   saveWishlist();
   updateWishlistBadge();
@@ -91,7 +108,7 @@ function toggleWishlist(productId) {
 }
 
 function isInWishlist(id) {
-  return wishlist.includes(id);
+  return wishlist.some(w => w.id === id);
 }
 
 // ─── BADGE ────────────────────────────────────────────────────────────────
@@ -106,7 +123,7 @@ function updateCartBadge() {
 // ─── TOTALS ───────────────────────────────────────────────────────────────
 function updateCartWithDetails() {
   const subtotal = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
-  const deliveryFee = subtotal > 5000 ? 0 : 350;
+  const deliveryFee = subtotal > 5000 ? 0 : 200;
   const total = subtotal + deliveryFee;
 
   const subtotalEl = document.getElementById("cartSubtotal");
@@ -143,6 +160,16 @@ function addToCart(productId, size, color) {
   const p = products.find(x => x.id === productId);
   if (!p) return;
 
+  // Use the variant's photo if a color is selected, otherwise fall back to primary photo
+  let variantPhoto = p.photo;
+  if (color) {
+    try {
+      const variants = p.variants ? JSON.parse(p.variants) : [];
+      const match = variants.find(v => v.name === color);
+      if (match && match.photo) variantPhoto = match.photo;
+    } catch (e) {}
+  }
+
   const existing = cart.find(c => c.id === productId && c.size === size && c.color === color);
   if (existing) {
     existing.qty = (existing.qty || 1) + 1;
@@ -153,7 +180,7 @@ function addToCart(productId, size, color) {
       price: p.price,
       size: size || null,
       color: color || null,
-      photo: p.photo,
+      photo: variantPhoto,
       qty: 1
     });
   }
@@ -263,7 +290,7 @@ function checkoutCart() {
   if (cart.length === 0) return;
 
   const subtotal = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
-  const deliveryFee = subtotal > 5000 ? 0 : 350;
+  const deliveryFee = subtotal > 5000 ? 0 : 200;
   const total = subtotal + deliveryFee;
 
   const orderItems = cart.map(c => ({

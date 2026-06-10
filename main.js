@@ -14,10 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Filter buttons
   initFilterButtons();
 
-  // 5. Price sliders
-  initPriceSliders();
-
-  // 6. Back-to-top
+  // 5. Back-to-top
   initBackToTop();
 
   // 7. Admin trigger (logo triple-tap)
@@ -69,14 +66,6 @@ document.addEventListener("keydown", e => {
     closeSizeGuideModal();
     closeOrderSummaryModal();
     cancelAdminPanel();
-
-    // Close price dropdown
-    const dropdown = document.getElementById("priceFilterDropdown");
-    const trigger  = document.getElementById("priceFilterTrigger");
-    if (dropdown?.classList.contains("open")) {
-      dropdown.classList.remove("open");
-      trigger?.classList.remove("active");
-    }
     return;
   }
 
