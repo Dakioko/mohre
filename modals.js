@@ -114,11 +114,13 @@ function directOrder(id) {
 }
 
 // ─── WHATSAPP ORDER ───────────────────────────────────────────────────────
-function sendWhatsApp(p, size, color) {
+function sendWhatsApp(p, size, color, qty) {
+  const qtyVal = qty && qty > 1 ? qty : 1;
   const sizeStr  = size  ? `\nSize: *${size}*`   : "";
   const colorStr = color ? `\nColour: *${color}*` : "";
+  const qtyStr   = qtyVal > 1 ? `\nQuantity: *${qtyVal}*` : "";
   const msg = encodeURIComponent(
-    `Hi! I'd love to order from Mohre Hub 🛍️\n\n*${p.name}*\nPrice: KSh ${Number(p.price).toLocaleString()}${sizeStr}${colorStr}\n\nPlease share payment and delivery details.`
+    `Hi! I'd love to order from Mohre Hub 🛍️\n\n*${p.name}*\nPrice: KSh ${Number(p.price).toLocaleString()}${sizeStr}${colorStr}${qtyStr}\n\nPlease share payment and delivery details.`
   );
   window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${msg}`, "_blank");
   vibrateOnAction();

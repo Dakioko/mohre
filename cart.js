@@ -5,7 +5,69 @@ function saveCart() {
   try { localStorage.setItem('mohrehub_cart', JSON.stringify(cart)); } catch (e) {}
 }
 
-// ─── WISHLIST ──────────────────────────────────────────────────────────────
+// ─── WISHLIST DRAWER ──────────────────────────────────────────────────────
+function updateWishlistBadge() {
+  const el = document.getElementById("wishlistCount");
+  if (!el) return;
+  el.textContent = wishlist.length;
+  el.classList.toggle("visible", wishlist.length > 0);
+}
+
+function renderWishlistBody() {
+  const body = document.getElementById("wishlistBody");
+  if (!body) return;
+
+  if (wishlist.length === 0) {
+    body.innerHTML = `
+      <div class="cart-empty">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        <p>Your wishlist is empty.</p>
+        <p style="font-size:0.75rem;">Tap the heart on any piece to save it here.</p>
+      </div>`;
+    return;
+  }
+
+  const wishlistProducts = wishlist.map(id => products.find(p => p.id === id)).filter(Boolean);
+  body.innerHTML = wishlistProducts.map(p => `
+    <div class="cart-item">
+      <img class="cart-item-img"
+        src="${escapeHtml(p.photo || '')}"
+        alt="${escapeHtml(p.name)}"
+        onerror="this.style.background='var(--border)';this.src=''"
+        style="background:var(--border)">
+      <div class="cart-item-info">
+        <p class="cart-item-name">${escapeHtml(p.name)}</p>
+        <p class="cart-item-price">KSh ${Number(p.price).toLocaleString()}</p>
+        <button class="wishlist-item-view-btn" onclick="closeWishlist();openDetailPanel(${p.id})">
+          View item →
+        </button>
+      </div>
+      <button class="cart-item-remove" onclick="toggleWishlist(${p.id})" aria-label="Remove ${escapeHtml(p.name)}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  `).join("");
+}
+
+function openWishlist() {
+  renderWishlistBody();
+  document.getElementById("wishlistDrawer")?.classList.add("open");
+  document.getElementById("wishlistOverlay")?.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeWishlist() {
+  document.getElementById("wishlistDrawer")?.classList.remove("open");
+  document.getElementById("wishlistOverlay")?.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// ─── WISHLIST STATE ────────────────────────────────────────────────────────
 function saveWishlist() {
   try { localStorage.setItem('wishlist', JSON.stringify(wishlist)); } catch (e) {}
 }
@@ -17,10 +79,15 @@ function toggleWishlist(productId) {
     showToast("Removed from wishlist");
   } else {
     wishlist.push(productId);
-    showToast("Added to wishlist ❤️");
+    showToast("Saved to wishlist ❤️");
   }
   saveWishlist();
+  updateWishlistBadge();
   renderProducts();
+  // Re-render wishlist drawer if open
+  if (document.getElementById("wishlistDrawer")?.classList.contains("open")) {
+    renderWishlistBody();
+  }
 }
 
 function isInWishlist(id) {

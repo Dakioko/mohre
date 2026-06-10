@@ -2,6 +2,7 @@
 let detailProductId = null;
 let detailSelectedSize = null;
 let detailSelectedColor = null;
+let detailQty = 1;
 
 // ─── OPEN DETAIL PANEL ────────────────────────────────────────────────────
 function openDetailPanel(id) {
@@ -11,6 +12,7 @@ function openDetailPanel(id) {
   detailProductId = id;
   detailSelectedSize = null;
   detailSelectedColor = null;
+  detailQty = 1;
 
   let variants = [];
   try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
@@ -18,100 +20,181 @@ function openDetailPanel(id) {
 
   const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23eae8e4'/%3E%3Ctext x='150' y='200' text-anchor='middle' fill='%23b0a898' font-size='13'%3ENo image%3C/text%3E%3C/svg%3E`;
 
-  // Build gallery image list: primary + extra photos + variant photos
+  // Build gallery image list
   const galleryPhotos = [];
   if (p.photo) galleryPhotos.push(p.photo);
-  // Extra uploaded photos
   try { if (p.photos) { const extras = JSON.parse(p.photos); extras.forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); }); } } catch (e) {}
-  // Variant photos
   if (hasVariants) {
     variants.forEach(v => { if (v.photo && !galleryPhotos.includes(v.photo)) galleryPhotos.push(v.photo); });
   }
   if (!galleryPhotos.length) galleryPhotos.push(placeholder);
 
+  // Left column: main image + thumbnails
   const galleryHTML = `
-    <div class="detail-gallery ${galleryPhotos.length === 1 ? 'single' : ''}">
-      ${galleryPhotos.map((src, idx) => `
-        <img class="detail-gallery-img"
-          src="${escapeHtml(src)}"
+    <div class="detail-gallery-col">
+      <div class="detail-main-img-wrap">
+        <img class="detail-main-img" id="detailMainImg"
+          src="${escapeHtml(galleryPhotos[0])}"
           alt="${escapeHtml(p.name)}"
           onerror="this.src='${placeholder}'"
-          onclick="openLightboxWithGallery(${JSON.stringify(galleryPhotos).replace(/"/g, '&quot;')}, ${idx})">
-      `).join('')}
+          onclick="openLightboxWithGallery(${JSON.stringify(galleryPhotos).replace(/"/g, '&quot;')}, 0)">
+      </div>
+      ${galleryPhotos.length > 1 ? `
+        <div class="detail-thumbs">
+          ${galleryPhotos.map((src, idx) => `
+            <button class="detail-thumb${idx === 0 ? ' active' : ''}" onclick="switchDetailMainImg('${escapeHtml(src)}', this)">
+              <img src="${escapeHtml(src)}" alt="${escapeHtml(p.name)} photo ${idx + 1}"
+                onerror="this.src='${placeholder}'">
+            </button>
+          `).join('')}
+        </div>` : ''}
     </div>`;
 
   // Sizes
   const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
   const sizesHTML = sizes.length ? `
-    <p class="detail-section-label">Select size</p>
-    <div class="detail-sizes" id="detailSizes">
-      ${sizes.map(s => `
-        <button class="detail-size-chip"
-          onclick="selectDetailSize(this,'${escapeHtml(s)}')">${escapeHtml(s)}</button>
-      `).join('')}
-    </div>
-    <p class="size-skip-note" style="margin-bottom:1rem;">
-      Not sure? We'll help you find the right fit over WhatsApp.
-    </p>` : '';
+    <div class="detail-field">
+      <div class="detail-field-label">
+        Size
+        <button class="detail-size-guide-link" onclick="showSizeGuide()">Size guide</button>
+      </div>
+      <div class="detail-sizes" id="detailSizes">
+        ${sizes.map(s => `
+          <button class="detail-size-chip"
+            onclick="selectDetailSize(this,'${escapeHtml(s)}')">${escapeHtml(s)}</button>
+        `).join('')}
+      </div>
+    </div>` : '';
 
   // Colours
   const colorsHTML = hasVariants ? `
-    <p class="detail-section-label">Colour</p>
-    <div class="detail-colors" id="detailColors">
-      ${variants.map((v, i) => `
-        <span class="detail-color-swatch ${i === 0 ? 'active' : ''}"
-          style="background:${v.color || '#ccc'}"
-          title="${escapeHtml(v.name || '')}"
-          onclick="selectDetailColor(this,'${(v.name || '').replace(/'/g, "\\'")}','${(v.photo || p.photo || '').replace(/'/g, "\\'")}',${p.id},${i})">
-        </span>
-      `).join('')}
-      ${variants[0]?.name
-        ? `<span style="font-size:0.75rem;color:var(--muted);align-self:center;" id="detailColorName">
-            ${escapeHtml(variants[0].name)}
-           </span>`
-        : ''}
+    <div class="detail-field">
+      <div class="detail-field-label">
+        Colour
+        ${variants[0]?.name ? `<span class="detail-color-name-label" id="detailColorName">${escapeHtml(variants[0].name)}</span>` : ''}
+      </div>
+      <div class="detail-colors" id="detailColors">
+        ${variants.map((v, i) => `
+          <button class="detail-color-swatch ${i === 0 ? 'active' : ''}"
+            style="background:${v.color || '#ccc'}"
+            title="${escapeHtml(v.name || '')}"
+            onclick="selectDetailColor(this,'${(v.name || '').replace(/'/g, "\\'")}','${(v.photo || p.photo || '').replace(/'/g, "\\'")}',${p.id},${i})">
+          </button>
+        `).join('')}
+      </div>
     </div>` : '';
 
   if (hasVariants && variants[0]) detailSelectedColor = variants[0].name || null;
 
-  // Inject body
+  const inWishlist = isInWishlist(p.id);
+
+  // Right column
+  const infoHTML = `
+    <div class="detail-info-col">
+      <div class="detail-info-top">
+        <div class="detail-top-actions">
+          <button class="detail-share-btn" onclick="shareProduct()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+            </svg>
+            Share
+          </button>
+        </div>
+        <p class="detail-category-label">${escapeHtml(p.category)}</p>
+        <h2 class="detail-name">${escapeHtml(p.name)}</h2>
+        <p class="detail-price">KSh ${Number(p.price).toLocaleString()}</p>
+      </div>
+
+      ${sizesHTML}
+      ${colorsHTML}
+
+      <!-- Quantity -->
+      <div class="detail-field">
+        <div class="detail-field-label">Quantity</div>
+        <div class="detail-qty-row">
+          <button class="detail-qty-btn" onclick="changeDetailQty(-1)" aria-label="Decrease">−</button>
+          <span class="detail-qty-val" id="detailQtyVal">1</span>
+          <button class="detail-qty-btn" onclick="changeDetailQty(1)" aria-label="Increase">+</button>
+        </div>
+      </div>
+
+      ${p.isSold ? `
+        <p class="detail-sold-label">This item is no longer available.</p>
+      ` : `
+        <!-- Action buttons -->
+        <div class="detail-actions">
+          <button class="detail-buynow-btn" onclick="detailOrder()">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+            </svg>
+            Buy Now
+          </button>
+          <button class="detail-addcart-btn" onclick="detailSaveToCart()">
+            Add to Cart
+          </button>
+          <button class="detail-wishlist-btn${inWishlist ? ' active' : ''}" id="detailWishlistBtn"
+            onclick="detailToggleWishlist()">
+            <svg fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24" width="15" height="15">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            ${inWishlist ? 'Wishlisted' : 'Add to Wishlist'}
+          </button>
+        </div>
+      `}
+
+      <!-- Accordions -->
+      <div class="detail-accordions">
+        ${p.desc ? `
+        <div class="detail-accordion">
+          <button class="detail-accordion-trigger" onclick="toggleAccordion(this)">
+            Product Details
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="detail-accordion-body">
+            <p>${escapeHtml(p.desc)}</p>
+          </div>
+        </div>` : ''}
+
+        <div class="detail-accordion">
+          <button class="detail-accordion-trigger" onclick="toggleAccordion(this)">
+            Delivery
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="detail-accordion-body">
+            <p>Ships across Kenya. Delivery details confirmed over WhatsApp after ordering. Orders typically dispatched within 1–2 business days. Free delivery on orders over KSh 5,000.</p>
+          </div>
+        </div>
+
+        <div class="detail-accordion">
+          <button class="detail-accordion-trigger" onclick="toggleAccordion(this)">
+            Returns & Exchanges
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="detail-accordion-body">
+            <p>Contact us within 48 hours of receiving your order via WhatsApp. Items must be unworn, unwashed, and in original condition with tags intact. Sale items and accessories are final sale. Refunds processed within 5–7 business days.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.detail-info-col -->`;
+
   const bodyEl = document.getElementById("detailBody");
   if (bodyEl) {
     bodyEl.innerHTML = `
-      ${galleryHTML}
-      <div class="detail-info">
-        <p class="detail-category">${escapeHtml(p.category)}</p>
-        <h2 class="detail-name">${escapeHtml(p.name)}</h2>
-        <p class="detail-price">KSh ${Number(p.price).toLocaleString()}</p>
-        <span class="detail-auth-badge" onclick="openGuaranteeModal()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-          </svg>
-          Authenticity guaranteed
-        </span>
-        ${p.desc ? `<p class="detail-desc">${escapeHtml(p.desc)}</p>` : ''}
-        ${sizesHTML}
-        ${colorsHTML}
-        <div class="detail-delivery">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-          </svg>
-          <p>
-            <strong>Ships across Kenya.</strong>
-            Delivery details confirmed over WhatsApp after ordering.
-            Orders typically dispatched within 1–2 business days.
-          </p>
-        </div>
+      <div class="detail-two-col">
+        ${galleryHTML}
+        ${infoHTML}
       </div>`;
   }
 
-  // Show/hide footer for sold items
-  const footerEl = document.getElementById("detailFooter");
-  if (footerEl) footerEl.style.display = p.isSold ? 'none' : 'flex';
-
-  // Open panel
   document.getElementById("detailPanel")?.classList.add("open");
   document.getElementById("detailOverlay")?.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -125,7 +208,15 @@ function closeDetailPanel() {
   detailProductId = null;
 }
 
-// ─── SIZE / COLOUR SELECTION IN DETAIL PANEL ─────────────────────────────
+// ─── THUMBNAIL SWITCH ─────────────────────────────────────────────────────
+function switchDetailMainImg(src, thumbEl) {
+  const mainImg = document.getElementById("detailMainImg");
+  if (mainImg) mainImg.src = src;
+  document.querySelectorAll(".detail-thumb").forEach(t => t.classList.remove("active"));
+  if (thumbEl) thumbEl.classList.add("active");
+}
+
+// ─── SIZE / COLOUR SELECTION ──────────────────────────────────────────────
 function selectDetailSize(el, size) {
   document.querySelectorAll(".detail-size-chip").forEach(c => c.classList.remove("selected"));
   el.classList.add("selected");
@@ -140,14 +231,35 @@ function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
   const nameEl = document.getElementById("detailColorName");
   if (nameEl) nameEl.textContent = colorName;
 
-  // Swap the first gallery image to the selected colour's photo
   if (photoUrl) {
-    const firstImg = document.querySelector(".detail-gallery-img");
-    if (firstImg) firstImg.src = photoUrl;
+    const mainImg = document.getElementById("detailMainImg");
+    if (mainImg) mainImg.src = photoUrl;
+    // Update active thumb
+    const thumbs = document.querySelectorAll(".detail-thumb img");
+    thumbs.forEach((img, i) => {
+      if (img.src.includes(photoUrl) || img.src === photoUrl) {
+        document.querySelectorAll(".detail-thumb").forEach(t => t.classList.remove("active"));
+        img.closest(".detail-thumb")?.classList.add("active");
+      }
+    });
   }
-
-  // Also update the product card swatch state
   swapVariant({ stopPropagation: () => {} }, productId, variantIdx, photoUrl, colorName);
+}
+
+// ─── QUANTITY ─────────────────────────────────────────────────────────────
+function changeDetailQty(delta) {
+  detailQty = Math.max(1, detailQty + delta);
+  const el = document.getElementById("detailQtyVal");
+  if (el) el.textContent = detailQty;
+}
+
+// ─── ACCORDION ────────────────────────────────────────────────────────────
+function toggleAccordion(trigger) {
+  const accordion = trigger.closest(".detail-accordion");
+  const isOpen = accordion.classList.contains("open");
+  // Close all
+  document.querySelectorAll(".detail-accordion").forEach(a => a.classList.remove("open"));
+  if (!isOpen) accordion.classList.add("open");
 }
 
 // ─── DETAIL PANEL ACTIONS ─────────────────────────────────────────────────
@@ -155,13 +267,31 @@ function detailOrder() {
   if (!detailProductId) return;
   const p = products.find(x => x.id === detailProductId);
   if (!p) return;
-  sendWhatsApp(p, detailSelectedSize, detailSelectedColor);
+  sendWhatsApp(p, detailSelectedSize, detailSelectedColor, detailQty);
 }
 
 function detailSaveToCart() {
   if (!detailProductId) return;
-  addToCart(detailProductId, detailSelectedSize, detailSelectedColor);
-  showToast("Added to bag ✨");
+  for (let i = 0; i < detailQty; i++) {
+    addToCart(detailProductId, detailSelectedSize, detailSelectedColor);
+  }
+  showToast(`Added to cart ✨`);
+}
+
+function detailToggleWishlist() {
+  if (!detailProductId) return;
+  toggleWishlist(detailProductId);
+  // Update the button in detail panel
+  const btn = document.getElementById("detailWishlistBtn");
+  if (!btn) return;
+  const inWishlist = isInWishlist(detailProductId);
+  btn.classList.toggle("active", inWishlist);
+  btn.innerHTML = `
+    <svg fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24" width="15" height="15">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+    </svg>
+    ${inWishlist ? 'Wishlisted' : 'Add to Wishlist'}`;
 }
 
 function shareProduct() {
@@ -170,11 +300,7 @@ function shareProduct() {
   if (!p) return;
   const url = window.location.href.split('?')[0] + `?product=${detailProductId}`;
   if (navigator.share) {
-    navigator.share({
-      title: p.name,
-      text: `KSh ${Number(p.price).toLocaleString()} — ${p.name} on Mohre Hub`,
-      url
-    });
+    navigator.share({ title: p.name, text: `KSh ${Number(p.price).toLocaleString()} — ${p.name} on Mohre Hub`, url });
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(url);
     showToast("Link copied to clipboard!");
@@ -201,7 +327,6 @@ function updateLightboxImage() {
   if (img && currentGalleryImages[currentGalleryIndex]) {
     img.src = currentGalleryImages[currentGalleryIndex];
   }
-  // Show/hide nav arrows
   const prev = document.querySelector(".lightbox-prev");
   const next = document.querySelector(".lightbox-next");
   if (prev) prev.style.display = currentGalleryImages.length > 1 ? '' : 'none';
@@ -225,7 +350,6 @@ function nextImage() {
   updateLightboxImage();
 }
 
-// ─── SWIPE TO NAVIGATE LIGHTBOX ───────────────────────────────────────────
 function initLightboxSwipe() {
   const lightbox = document.getElementById("lightbox");
   if (!lightbox) return;
@@ -233,8 +357,6 @@ function initLightboxSwipe() {
   lightbox.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
   lightbox.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 50) {
-      dx < 0 ? nextImage() : previousImage();
-    }
+    if (Math.abs(dx) > 50) { dx < 0 ? nextImage() : previousImage(); }
   }, { passive: true });
 }

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. Cart badge + render (restores persisted cart)
   updateCartBadge();
   renderCartBody();
+  updateWishlistBadge();
 
   // 3. Filter buttons
   initFilterButtons();
@@ -28,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailPanel = document.getElementById("detailPanel");
   if (cartDrawer)  attachSwipeClose(cartDrawer,  closeCart);
   if (detailPanel) attachSwipeClose(detailPanel, closeDetailPanel);
+  const wishlistDrawer = document.getElementById("wishlistDrawer");
+  if (wishlistDrawer) attachSwipeClose(wishlistDrawer, closeWishlist);
 
   // 9. Lightbox swipe navigation
   initLightboxSwipe();
@@ -61,6 +64,7 @@ document.addEventListener("keydown", e => {
     closeLoginModal();
     closeGuaranteeModal();
     closeCart();
+    closeWishlist();
     closeDetailPanel();
     closeSizeGuideModal();
     closeOrderSummaryModal();

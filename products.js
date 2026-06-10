@@ -134,34 +134,25 @@ function renderProducts() {
             loading="lazy"
             onload="this.closest('.card-img-wrap').classList.add('img-loaded')"
             onerror="this.src='${placeholder}'">` : ''}
-          ${p.isSold
-            ? `<span class="card-badge sold">Sold</span>`
-            : ''}
-        </div>
-        <div class="card-meta">
-          <p class="card-category">${escapeHtml(p.category || '')}</p>
-          <h3 class="card-title">${escapeHtml(p.name)}</h3>
-          ${p.desc ? `<p class="card-desc">${escapeHtml(p.desc)}</p>` : ''}
-          ${swatchesHTML}
-          <p class="card-price">KSh ${Number(p.price).toLocaleString()}</p>
-          <div class="card-footer">
-            ${p.isSold
-              ? `<span style="font-size:0.72rem;color:var(--muted);">No longer available</span>`
-              : `<button class="card-order-btn"
-                  onclick="event.stopPropagation();openSizeModal(${p.id})"
-                  aria-label="Order ${escapeHtml(p.name)} via WhatsApp">
-                  Order
-                </button>`}
-            <button class="card-cart-btn icon-btn"
-              onclick="event.stopPropagation();toggleWishlist(${p.id})"
-              aria-label="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}"
-              style="color:${inWishlist ? 'var(--accent)' : 'var(--muted)'}">
-              <svg fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-              </svg>
-            </button>
+          ${p.isSold ? `<span class="card-badge sold">Sold</span>` : ''}
+          <!-- Wishlist heart on image -->
+          <button class="card-wishlist-btn${inWishlist ? ' active' : ''}"
+            onclick="event.stopPropagation();toggleWishlist(${p.id})"
+            aria-label="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
+            <svg fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </button>
+          <!-- Quick View (desktop hover only) -->
+          <div class="card-quick-view" onclick="event.stopPropagation();openDetailPanel(${p.id})">
+            Quick View
           </div>
+        </div>
+        <div class="card-meta-minimal">
+          <h3 class="card-title-minimal">${escapeHtml(p.name)}</h3>
+          ${swatchesHTML}
+          <p class="card-price-minimal">KSh ${Number(p.price).toLocaleString()}</p>
         </div>
       </article>`;
   }).join("");
