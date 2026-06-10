@@ -88,28 +88,111 @@ function handleVariantImageFile(input, idx) {
   reader.readAsDataURL(file);
 }
 
+// ─── COLOR NAME LOOKUP ────────────────────────────────────────────────────
+// Maps a hex color to the nearest human-readable name using a curated palette.
+const COLOR_NAMES = {
+  "#000000":"Black","#111111":"Black","#1a1a1a":"Jet Black","#222222":"Charcoal",
+  "#333333":"Dark Charcoal","#444444":"Charcoal","#555555":"Dim Grey",
+  "#666666":"Grey","#777777":"Grey","#888888":"Medium Grey","#999999":"Silver Grey",
+  "#aaaaaa":"Silver","#bbbbbb":"Light Silver","#cccccc":"Light Grey",
+  "#dddddd":"Pale Grey","#eeeeee":"Off White","#f5f5f5":"Ghost White","#ffffff":"White",
+  "#ff0000":"Red","#cc0000":"Dark Red","#990000":"Crimson","#ff4444":"Coral Red",
+  "#ff6666":"Light Red","#ff9999":"Blush","#ffcccc":"Pale Pink",
+  "#ff69b4":"Hot Pink","#ff1493":"Deep Pink","#c71585":"Berry",
+  "#ff6b6b":"Salmon","#e8748a":"Rose","#c9536a":"Dusty Rose",
+  "#ff8c00":"Dark Orange","#ff6600":"Burnt Orange","#ff4500":"Orange Red",
+  "#ffa500":"Orange","#ffb347":"Peach","#ffd700":"Gold","#ffff00":"Yellow",
+  "#f5e642":"Lemon","#fffacd":"Cream","#f5f0e8":"Ivory","#faebd7":"Antique White",
+  "#8b4513":"Saddle Brown","#a0522d":"Sienna","#cd853f":"Peru","#deb887":"Burlywood",
+  "#d2b48c":"Tan","#c8a882":"Sand","#e8d5b0":"Champagne","#f5deb3":"Wheat",
+  "#006400":"Dark Green","#008000":"Green","#228b22":"Forest Green",
+  "#2e8b57":"Sea Green","#3cb371":"Medium Green","#90ee90":"Light Green",
+  "#98fb98":"Pale Green","#adff2f":"Yellow Green","#556b2f":"Olive Green",
+  "#808000":"Olive","#6b8e23":"Moss Green","#8fbc8f":"Sage",
+  "#008080":"Teal","#20b2aa":"Light Teal","#48d1cc":"Medium Turquoise",
+  "#40e0d0":"Turquoise","#00ced1":"Dark Turquoise","#00bcd4":"Cyan",
+  "#000080":"Navy","#00008b":"Dark Blue","#0000cd":"Medium Blue",
+  "#0000ff":"Blue","#4169e1":"Royal Blue","#6495ed":"Cornflower Blue",
+  "#87ceeb":"Sky Blue","#add8e6":"Light Blue","#b0c4de":"Steel Blue",
+  "#191970":"Midnight Blue","#1e3a5f":"Deep Navy","#2c3e6b":"Denim",
+  "#4b0082":"Indigo","#8b008b":"Dark Magenta","#9400d3":"Dark Violet",
+  "#9932cc":"Dark Orchid","#ba55d3":"Medium Orchid","#dda0dd":"Plum",
+  "#ee82ee":"Violet","#da70d6":"Orchid","#ff00ff":"Magenta",
+  "#800020":"Burgundy","#722f37":"Wine","#a52a2a":"Brown","#800000":"Maroon",
+  "#b8860b":"Dark Goldenrod","#8c7e6c":"Warm Taupe","#a89b8a":"Taupe",
+  "#d4c9bc":"Linen","#e8e0d5":"Pearl","#f0ebe3":"Eggshell",
+};
+
+function hexToColorName(hex) {
+  // Exact match first
+  const lower = hex.toLowerCase();
+  if (COLOR_NAMES[lower]) return COLOR_NAMES[lower];
+
+  // Find nearest by RGB distance
+  const r1 = parseInt(lower.slice(1,3),16);
+  const g1 = parseInt(lower.slice(3,5),16);
+  const b1 = parseInt(lower.slice(5,7),16);
+  let best = null, bestDist = Infinity;
+  for (const [k, name] of Object.entries(COLOR_NAMES)) {
+    const r2 = parseInt(k.slice(1,3),16);
+    const g2 = parseInt(k.slice(3,5),16);
+    const b2 = parseInt(k.slice(5,7),16);
+    const dist = (r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2;
+    if (dist < bestDist) { bestDist = dist; best = name; }
+  }
+  return best || "";
+}
+
+function onVariantColorChange(idx, hex) {
+  colorVariants[idx].color = hex;
+  // Only auto-fill name if the user hasn't typed a custom one
+  const nameInput = document.getElementById(`variantName_${idx}`);
+  if (nameInput && !nameInput.dataset.userEdited) {
+    const suggested = hexToColorName(hex);
+    nameInput.value = suggested;
+    colorVariants[idx].name = suggested;
+  }
+}
+
 function renderColorVariants() {
   const list = document.getElementById("colorVariantsList");
   if (!list) return;
   list.innerHTML = colorVariants.map((v, i) => `
     <div class="color-variant-row">
-      <input type="color" class="color-swatch-input"
-        value="${v.color}"
-        onchange="colorVariants[${i}].color=this.value" />
-      <input type="text" placeholder="Colour name"
+      <div class="color-picker-wrap">
+        <input type="color" class="color-swatch-input"
+          value="${v.color || '#8c7e6c'}"
+          oninput="onVariantColorChange(${i}, this.value)"
+          title="Pick a colour" />
+        <span class="color-hex-label">${v.color || '#8c7e6c'}</span>
+      </div>
+      <input type="text" id="variantName_${i}" placeholder="e.g. Midnight Blue"
         value="${escapeHtml(v.name)}"
-        oninput="colorVariants[${i}].name=this.value"
+        oninput="colorVariants[${i}].name=this.value; this.dataset.userEdited='1';"
         style="padding:0.4rem;font-size:0.75rem;" />
       <div style="display:flex;align-items:center;gap:0.4rem;">
-        <label class="variant-upload-btn" title="Upload photo">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <label class="variant-upload-btn" title="Upload photo for this colour">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
           Photo
           <input type="file" accept="image/*" style="display:none" onchange="handleVariantImageFile(this,${i})" />
         </label>
-        ${v.photo ? `<img class="variant-img-preview" src="${escapeHtml(v.photo)}" style="width:28px;height:34px;object-fit:cover;border-radius:2px;border:1px solid var(--border);">` : `<img class="variant-img-preview" style="display:none;width:28px;height:34px;object-fit:cover;border-radius:2px;border:1px solid var(--border);">`}
+        ${v.photo
+          ? `<img class="variant-img-preview" src="${escapeHtml(v.photo)}" style="width:28px;height:34px;object-fit:cover;border-radius:2px;border:1px solid var(--border);">`
+          : `<img class="variant-img-preview" style="display:none;width:28px;height:34px;object-fit:cover;border-radius:2px;border:1px solid var(--border);">`}
       </div>
-      <button class="remove-variant-btn" onclick="removeColorVariant(${i})">✕</button>
+      <button class="remove-variant-btn" onclick="removeColorVariant(${i})" title="Remove colour">✕</button>
     </div>`).join("");
+
+  // Update hex labels live as color picker moves
+  list.querySelectorAll('.color-swatch-input').forEach((input, i) => {
+    input.addEventListener('input', () => {
+      const label = input.closest('.color-picker-wrap')?.querySelector('.color-hex-label');
+      if (label) label.textContent = input.value;
+    });
+  });
 }
 
 // ─── SUBMIT (add or update) ───────────────────────────────────────────────

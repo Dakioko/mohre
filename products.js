@@ -9,7 +9,6 @@ function getFiltered() {
   let base =
     currentFilter === "All"  ? products.filter(p => !p.isSold) :
     currentFilter === "New"  ? products.filter(p => p.isNew && !p.isSold) :
-    currentFilter === "Sold" ? products.filter(p => p.isSold) :
     products.filter(p => p.category === currentFilter && !p.isSold);
 
   if (currentSearch) {
@@ -86,9 +85,15 @@ function renderProducts() {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="empty-state">
-        <p style="font-size:1.5rem;margin-bottom:0.5rem;">🔍</p>
-        <p>No pieces match your filters.</p>
-        <button class="retry-btn" onclick="resetViewToShop()">Clear filters</button>
+        <div class="empty-state-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2"
+              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+          </svg>
+        </div>
+        <p class="empty-state-title">Nothing here yet</p>
+        <p class="empty-state-sub">Try a different category or adjust your filters</p>
+        <button class="retry-btn" onclick="resetViewToShop()">Browse all pieces</button>
       </div>`;
     return;
   }

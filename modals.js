@@ -97,7 +97,6 @@ function confirmSizeAddToCart() {
   const colorName = activeColor ? activeColor.getAttribute('data-color') : null;
   closeSizeModal("");
   addToCart(pendingOrderId, selectedSize, colorName);
-  openCart();
 
   // Restore confirm button for WhatsApp flow
   const confirmBtn = document.getElementById("sizeModalConfirmBtn");

@@ -171,7 +171,7 @@ function addToCart(productId, size, color) {
   const itemCount = cart.reduce((s, c) => s + (c.qty || 1), 0);
   announce(`${p.name} added to cart. ${itemCount} item${itemCount > 1 ? 's' : ''} in cart.`);
   vibrateOnAction();
-  showToast(`✨ Added — ${itemCount} item${itemCount > 1 ? 's' : ''} in selection`);
+  openCart();
 }
 
 function removeFromCart(idx) {

@@ -38,6 +38,11 @@ function openDetailPanel(id) {
           alt="${escapeHtml(p.name)}"
           onerror="this.src='${placeholder}'"
           onclick="openLightboxWithGallery(${JSON.stringify(galleryPhotos).replace(/"/g, '&quot;')}, 0)">
+        ${hasVariants && variants[0]?.name ? `
+          <div class="detail-img-color-badge" id="detailImgColorBadge">
+            <span id="detailImgColorDot" style="width:10px;height:10px;border-radius:50%;background:${variants[0].color || '#ccc'};display:inline-block;flex-shrink:0;border:1px solid rgba(255,255,255,0.4)"></span>
+            <span id="detailImgColorText">${escapeHtml(variants[0].name)}</span>
+          </div>` : ''}
       </div>
       ${galleryPhotos.length > 1 ? `
         <div class="detail-thumbs">
@@ -69,16 +74,16 @@ function openDetailPanel(id) {
   // Colours
   const colorsHTML = hasVariants ? `
     <div class="detail-field">
-      <div class="detail-field-label">
-        Colour
-        ${variants[0]?.name ? `<span class="detail-color-name-label" id="detailColorName">${escapeHtml(variants[0].name)}</span>` : ''}
-      </div>
+      <div class="detail-field-label">Colour</div>
       <div class="detail-colors" id="detailColors">
         ${variants.map((v, i) => `
-          <button class="detail-color-swatch ${i === 0 ? 'active' : ''}"
-            style="background:${v.color || '#ccc'}"
-            title="${escapeHtml(v.name || '')}"
+          <button class="detail-color-chip ${i === 0 ? 'selected' : ''}"
+            data-color-name="${escapeHtml(v.name || '')}"
+            data-photo="${escapeHtml(v.photo || p.photo || '')}"
+            data-variant-idx="${i}"
             onclick="selectDetailColor(this,'${(v.name || '').replace(/'/g, "\\'")}','${(v.photo || p.photo || '').replace(/'/g, "\\'")}',${p.id},${i})">
+            <span class="detail-color-chip-dot" style="background:${v.color || '#ccc'}"></span>
+            ${escapeHtml(v.name || 'Colour ' + (i + 1))}
           </button>
         `).join('')}
       </div>
@@ -224,22 +229,25 @@ function selectDetailSize(el, size) {
 }
 
 function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
-  document.querySelectorAll(".detail-color-swatch").forEach(s => s.classList.remove("active"));
-  el.classList.add("active");
+  document.querySelectorAll(".detail-color-chip").forEach(s => s.classList.remove("selected"));
+  el.classList.add("selected");
   detailSelectedColor = colorName;
 
-  const nameEl = document.getElementById("detailColorName");
-  if (nameEl) nameEl.textContent = colorName;
+  // Update color badge on main image
+  const badgeDot  = document.getElementById("detailImgColorDot");
+  const badgeText = document.getElementById("detailImgColorText");
+  const dot = el.querySelector(".detail-color-chip-dot");
+  if (badgeDot && dot)  badgeDot.style.background = dot.style.background;
+  if (badgeText) badgeText.textContent = colorName;
 
   if (photoUrl) {
     const mainImg = document.getElementById("detailMainImg");
     if (mainImg) mainImg.src = photoUrl;
-    // Update active thumb
-    const thumbs = document.querySelectorAll(".detail-thumb img");
-    thumbs.forEach((img, i) => {
-      if (img.src.includes(photoUrl) || img.src === photoUrl) {
-        document.querySelectorAll(".detail-thumb").forEach(t => t.classList.remove("active"));
-        img.closest(".detail-thumb")?.classList.add("active");
+    document.querySelectorAll(".detail-thumb").forEach(t => {
+      t.classList.remove("active");
+      const img = t.querySelector("img");
+      if (img && (img.getAttribute("src") === photoUrl || img.src.endsWith(photoUrl))) {
+        t.classList.add("active");
       }
     });
   }
@@ -275,7 +283,6 @@ function detailSaveToCart() {
   for (let i = 0; i < detailQty; i++) {
     addToCart(detailProductId, detailSelectedSize, detailSelectedColor);
   }
-  showToast(`Added to cart ✨`);
 }
 
 function detailToggleWishlist() {
