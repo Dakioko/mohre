@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. Theme
   initDarkMode();
 
+  // 1b. Restore admin session if token is still valid
+  restoreAdminSession();
+
   // 2. Cart badge + render (restores persisted cart)
   updateCartBadge();
   renderCartBody();

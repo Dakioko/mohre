@@ -5,6 +5,26 @@ function saveCart() {
   try { localStorage.setItem('mohrehub_cart', JSON.stringify(cart)); } catch (e) {}
 }
 
+/**
+ * Remove cart items whose product no longer exists or has been marked sold.
+ * Called after products are loaded. Shows a toast if anything was removed.
+ */
+function reconcileCart() {
+  if (!products.length) return;
+  const before = cart.length;
+  cart = cart.filter(c => {
+    const p = products.find(x => x.id === c.id);
+    return p && !p.isSold;
+  });
+  if (cart.length !== before) {
+    saveCart();
+    updateCartBadge();
+    renderCartBody();
+    const removed = before - cart.length;
+    showToast(`${removed} item${removed > 1 ? 's' : ''} removed — no longer available.`);
+  }
+}
+
 // ─── WISHLIST DRAWER ──────────────────────────────────────────────────────
 function updateWishlistBadge() {
   const el = document.getElementById("wishlistCount");
@@ -100,7 +120,8 @@ function toggleWishlist(productId, variantPhoto, colorName) {
   }
   saveWishlist();
   updateWishlistBadge();
-  renderProducts();
+  // Update only the affected card's heart button — no full grid rebuild
+  _updateWishlistStates();
   // Re-render wishlist drawer if open
   if (document.getElementById("wishlistDrawer")?.classList.contains("open")) {
     renderWishlistBody();
@@ -160,6 +181,18 @@ function addToCart(productId, size, color) {
   const p = products.find(x => x.id === productId);
   if (!p) return;
 
+  // Visual feedback on the triggering card button
+  const card = document.querySelector(`.product-card[data-id="${productId}"]`);
+  const cartBtn = card?.querySelector('.card-cart-btn');
+  if (cartBtn) {
+    cartBtn.disabled = true;
+    cartBtn.classList.add('btn-loading');
+    setTimeout(() => {
+      cartBtn.disabled = false;
+      cartBtn.classList.remove('btn-loading');
+    }, 600);
+  }
+
   // Use the variant's photo if a color is selected, otherwise fall back to primary photo
   let variantPhoto = p.photo;
   if (color) {
@@ -189,10 +222,10 @@ function addToCart(productId, size, color) {
   renderCartBody();
 
   // Bump animation on cart button
-  const cartBtn = document.querySelector('.cart-btn');
-  if (cartBtn) {
-    cartBtn.classList.add('cart-bump');
-    setTimeout(() => cartBtn.classList.remove('cart-bump'), 300);
+  const navCartBtn = document.querySelector('.cart-btn');
+  if (navCartBtn) {
+    navCartBtn.classList.add('cart-bump');
+    setTimeout(() => navCartBtn.classList.remove('cart-bump'), 300);
   }
 
   const itemCount = cart.reduce((s, c) => s + (c.qty || 1), 0);

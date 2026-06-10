@@ -17,15 +17,21 @@ function openDetailPanel(id) {
   let variants = [];
   try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
   const hasVariants = variants.length > 0;
+  detailSelectedColor = hasVariants ? (variants[0].name || null) : null;
 
   const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23eae8e4'/%3E%3Ctext x='150' y='200' text-anchor='middle' fill='%23b0a898' font-size='13'%3ENo image%3C/text%3E%3C/svg%3E`;
 
   // Build gallery image list
   const galleryPhotos = [];
-  if (p.photo) galleryPhotos.push(p.photo);
+  // When variants exist, variant photos (incl. variant 0) represent the
+  // primary image's colour already — skip the standalone primary photo to
+  // avoid a visually-duplicate thumbnail with no colour association.
+  if (p.photo && !hasVariants) galleryPhotos.push(p.photo);
   try { if (p.photos) { const extras = JSON.parse(p.photos); extras.forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); }); } } catch (e) {}
   if (hasVariants) {
     variants.forEach(v => { if (v.photo && !galleryPhotos.includes(v.photo)) galleryPhotos.push(v.photo); });
+    // Fallback: if no variant has a photo, still show the primary photo
+    if (!galleryPhotos.length && p.photo) galleryPhotos.push(p.photo);
   }
   if (!galleryPhotos.length) galleryPhotos.push(placeholder);
 
@@ -77,7 +83,7 @@ function openDetailPanel(id) {
       <div class="detail-field-label">Colour</div>
       <div class="detail-colors" id="detailColors">
         ${variants.map((v, i) => `
-          <button class="detail-color-chip"
+          <button class="detail-color-chip${i === 0 ? ' selected' : ''}"
             data-color-name="${escapeHtml(v.name || '')}"
             data-photo="${escapeHtml(v.photo || p.photo || '')}"
             data-variant-idx="${i}"

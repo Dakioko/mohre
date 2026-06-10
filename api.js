@@ -27,13 +27,28 @@ async function apiGet(retries = 3) {
 
 /**
  * POST an admin action to the backend.
- * SECURITY NOTE: The secret should be validated server-side, not here.
+ * Sends the HMAC session token obtained at login — never the raw password.
+ * If the token is missing or expired the request is blocked client-side.
  * @param {object} body - action payload
  */
 async function apiPost(body) {
+  const token = getAdminToken();
+  if (!token) {
+    showToast("Session expired. Please log in again.");
+    _deactivateAdminUI();
+    openLoginModal();
+    throw new Error("No admin session");
+  }
   const res = await fetch(CONFIG.SCRIPT_URL, {
     method: "POST",
-    body: JSON.stringify({ ...body, secret: ADMIN_SECRET_KEY }),
+    body: JSON.stringify({ ...body, token }),
   });
-  return res.json();
+  const data = await res.json();
+  if (data.error === "Unauthorised") {
+    showToast("Session expired. Please log in again.");
+    _deactivateAdminUI();
+    openLoginModal();
+    throw new Error("Unauthorised");
+  }
+  return data;
 }

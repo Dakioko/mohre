@@ -110,13 +110,12 @@ function applySavedFilters() {
   } catch (e) {}
 }
 
-// ─── STUBS (called elsewhere, safe no-ops now) ────────────────────────────
+// ─── PRICE FILTER (disabled) ──────────────────────────────────────────────
+let priceFilterActive = false;
+let priceMinVal = 0;
+let priceMaxVal = Infinity;
+
 function initPriceSliders()   {}
 function updateFilterCounts() {}
 function clearPriceFilter()   {}
 function updatePriceRange()   {}
-
-// These variables are still referenced in products.js getFiltered()
-let priceFilterActive = false;
-let priceMinVal = 0;
-let priceMaxVal = Infinity;

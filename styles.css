@@ -393,205 +393,29 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
   box-shadow: 0 1px 6px var(--accent-glow);
 }
 
-/* ─── PRICE FILTER DROPDOWN ─────────────────────────────────────────────── */
-.price-filter-wrapper { position: relative; }
-
-.price-filter-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.price-filter-trigger:hover { border-color: var(--primary); color: var(--primary); }
-
-.price-filter-trigger.active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--bg);
-}
-
-.price-filter-dropdown {
-  position: fixed;
-  top: auto;
-  left: 1rem;
-  right: 1rem;
-  width: auto;
-  max-width: 320px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  padding: 1rem;
-  z-index: 200;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-8px);
-  transition: all 0.2s ease;
-}
-
-@media (min-width: 500px) {
-  .price-filter-dropdown {
-    position: absolute;
-    left: auto;
-    right: 0;
-    top: calc(100% + 8px);
-    width: 280px;
-    max-width: none;
-  }
-}
-
-.price-filter-dropdown.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.price-filter-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-}
-
-.price-reset {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 0.65rem;
-  cursor: pointer;
-  font-family: var(--font-body);
-  text-decoration: underline;
-}
-
-.price-reset:hover { color: var(--primary); }
-
-.price-inputs {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.price-input-group { flex: 1; }
-
-.price-input-group label {
-  display: block;
-  font-size: 0.6rem;
-  color: var(--muted);
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.price-input-group input {
-  width: 100%;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-family: var(--font-body);
-  text-align: center;
-  background: var(--bg);
-  color: var(--primary);
-}
-
-.price-input-group input:focus { outline: none; border-color: var(--primary); }
-
-.price-dash { color: var(--muted); font-size: 0.8rem; }
-
-.price-slider-container {
+/* ─── ACTIVE FILTERS BAR ─────────────────────────────────────────────────── */
+.btn-loading {
   position: relative;
-  height: 32px;
-  margin: 0.5rem 0 1rem;
-}
-
-.price-slider-track {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 100%;
-  height: 2px;
-  background: var(--border);
-  border-radius: 2px;
-}
-
-.price-slider-fill {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 2px;
-  background: var(--primary);
-  border-radius: 2px;
+  color: transparent !important;
   pointer-events: none;
 }
 
-.price-slider {
+.btn-loading::after {
+  content: '';
   position: absolute;
-  width: 100%;
-  height: 32px;
-  top: 0;
-  -webkit-appearance: none;
-  background: transparent;
-  pointer-events: none;
-}
-
-.price-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  inset: 0;
+  margin: auto;
   width: 14px;
   height: 14px;
-  background: var(--primary);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
   border-radius: 50%;
-  cursor: pointer;
-  pointer-events: auto;
-  border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s;
+  animation: btn-spin 0.5s linear infinite;
+  color: var(--surface);
 }
 
-.price-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
-
-.price-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.price-presets button {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.6rem;
-  font-family: var(--font-body);
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.price-presets button:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--border);
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ─── ACTIVE FILTERS BAR ─────────────────────────────────────────────────── */
@@ -1437,6 +1261,11 @@ input:focus, select:focus, textarea:focus {
   border-radius: 8px;
   opacity: 0;
   transition: opacity 0.2s;
+}
+
+/* Safety net: never show admin controls unless body has .is-admin */
+body:not(.is-admin) .admin-card-btns {
+  display: none !important;
 }
 
 .product-card:hover .admin-card-btns,

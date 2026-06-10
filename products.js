@@ -57,6 +57,9 @@ function renderProducts() {
   if (countEl) countEl.textContent = `${filtered.length} piece${filtered.length !== 1 ? "s" : ""}`;
 
   if (filtered.length === 0) {
+    // Stop all slideshows before clearing grid
+    _slideshowTimers.forEach(timerId => clearInterval(timerId));
+    _slideshowTimers.clear();
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">
@@ -73,6 +76,23 @@ function renderProducts() {
   }
 
   const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23eae8e4'/%3E%3Ctext x='150' y='200' text-anchor='middle' fill='%23b0a898' font-size='13'%3ENo image%3C/text%3E%3C/svg%3E`;
+
+  // Check if the filtered set has changed — if same IDs in same order, skip full rebuild
+  const currentIds = Array.from(grid.querySelectorAll('.product-card')).map(c => parseInt(c.dataset.id));
+  const filteredIds = filtered.map(p => p.id);
+  const sameSet = currentIds.length === filteredIds.length && filteredIds.every((id, i) => id === currentIds[i]);
+
+  if (sameSet) {
+    // Only update wishlist button states — avoid full rebuild and slideshow restart
+    _updateWishlistStates();
+    const isAdmin = document.body.classList.contains("is-admin");
+    if (isAdmin) addAdminControls();
+    return;
+  }
+
+  // Full rebuild needed (filter/search changed)
+  _slideshowTimers.forEach(timerId => clearInterval(timerId));
+  _slideshowTimers.clear();
 
   grid.innerHTML = filtered.map((p, i) => {
     let variants = [];
@@ -114,7 +134,6 @@ function renderProducts() {
             onload="this.closest('.card-img-wrap').classList.add('img-loaded')"
             onerror="this.src='${placeholder}'">` : ''}
           ${p.isSold ? `<span class="card-badge sold">Sold</span>` : ''}
-          <!-- Wishlist heart on image -->
           <button class="card-wishlist-btn${inWishlist ? ' active' : ''}"
             onclick="event.stopPropagation();toggleWishlist(${p.id})"
             aria-label="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
@@ -123,9 +142,8 @@ function renderProducts() {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
             </svg>
           </button>
-          <!-- Quick View (desktop hover only) -->
           <div class="card-quick-view" onclick="event.stopPropagation();openDetailPanel(${p.id})">
-            Quick View
+            Shop Now
           </div>
         </div>
         <div class="card-meta-minimal">
@@ -136,12 +154,27 @@ function renderProducts() {
       </article>`;
   }).join("");
 
-  // Admin controls (visible whenever logged in as admin)
   const isAdmin = document.body.classList.contains("is-admin");
   if (isAdmin) addAdminControls();
 
-  // Start crossfade slideshows on cards with multiple images
   initCardSlideshows();
+}
+
+/**
+ * Update only the wishlist button states on existing cards
+ * without rebuilding the grid or restarting slideshows.
+ */
+function _updateWishlistStates() {
+  document.querySelectorAll('.product-card').forEach(card => {
+    const id  = parseInt(card.dataset.id);
+    const btn = card.querySelector('.card-wishlist-btn');
+    const svg = btn?.querySelector('svg');
+    if (!btn || !svg) return;
+    const active = isInWishlist(id);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-label', active ? 'Remove from wishlist' : 'Add to wishlist');
+    svg.setAttribute('fill', active ? 'currentColor' : 'none');
+  });
 }
 
 // ─── ADMIN OVERLAY CONTROLS ON CARDS ─────────────────────────────────────
@@ -270,6 +303,7 @@ async function loadProducts() {
   showSkeletons(6);
   try {
     products = await apiGet();
+    reconcileCart();
     renderProducts();
     populateHeroGallery();
     checkProductParam();

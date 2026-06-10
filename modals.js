@@ -39,6 +39,18 @@ function openSizeModal(id) {
 function openSizeModalForCart(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
+
+  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  // No sizes defined — add directly to cart without showing the modal
+  if (!sizes.length) {
+    const card = document.querySelector(`.product-card[data-id="${id}"]`);
+    const activeColor = card?.querySelector('.card-swatch.active');
+    const colorName = activeColor ? activeColor.getAttribute('data-color') : null;
+    addToCart(id, null, colorName);
+    return;
+  }
+
   pendingOrderId = id;
   selectedSize = null;
 
@@ -46,8 +58,6 @@ function openSizeModalForCart(id) {
   const priceEl = document.getElementById("sizeModalPrice");
   if (nameEl) nameEl.textContent = p.name;
   if (priceEl) priceEl.textContent = `KSh ${Number(p.price).toLocaleString()}`;
-
-  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
 
   const chipsEl = document.getElementById("sizeModalChips");
   if (chipsEl) {
@@ -113,7 +123,16 @@ function directOrder(id) {
 }
 
 // ─── WHATSAPP ORDER ───────────────────────────────────────────────────────
-function sendWhatsApp(p, size, color, qty) {
+function sendWhatsApp(p, size, color, qty, triggerEl) {
+  // Brief visual feedback on the button that triggered this
+  if (triggerEl) {
+    triggerEl.disabled = true;
+    triggerEl.classList.add('btn-loading');
+    setTimeout(() => {
+      triggerEl.disabled = false;
+      triggerEl.classList.remove('btn-loading');
+    }, 800);
+  }
   const qtyVal = qty && qty > 1 ? qty : 1;
   const sizeStr  = size  ? `\nSize: *${size}*`   : "";
   const colorStr = color ? `\nColour: *${color}*` : "";

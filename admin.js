@@ -496,13 +496,7 @@ function initAdminTrigger() {
     if (logoTapCount >= 3) {
       logoTapCount = 0;
       if (document.body.classList.contains("is-admin")) {
-        // Log out
-        ADMIN_SECRET_KEY = "";
-        document.body.classList.remove("is-admin");
-        document.getElementById("addItemBtn") && (document.getElementById("addItemBtn").style.display = "none");
-        document.getElementById("adminPanel")?.classList.remove("visible");
-        showToast("Logged out.");
-        renderProducts();
+        _deactivateAdminUI();
       } else {
         openLoginModal();
       }
@@ -512,31 +506,82 @@ function initAdminTrigger() {
   });
 }
 
-// ─── VERIFY ADMIN LOGIN (server-side check) ───────────────────────────────
+// ─── ADMIN SESSION (HMAC token, stored in sessionStorage) ────────────────
+const ADMIN_SESSION_KEY = 'mohrehub_admin_token';
+const ADMIN_SESSION_EXP = 'mohrehub_admin_exp';
+
+function getAdminToken() {
+  try {
+    const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    const exp   = parseInt(sessionStorage.getItem(ADMIN_SESSION_EXP) || '0');
+    if (!token || Date.now() > exp) {
+      clearAdminSession();
+      return null;
+    }
+    return token;
+  } catch (e) { return null; }
+}
+
+function saveAdminSession(token, expiresAt) {
+  try {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+    sessionStorage.setItem(ADMIN_SESSION_EXP, String(expiresAt));
+  } catch (e) {}
+}
+
+function clearAdminSession() {
+  try {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_EXP);
+  } catch (e) {}
+}
+
+// ─── VERIFY ADMIN LOGIN (HMAC token flow) ─────────────────────────────────
 async function verifyAdminLogin() {
-  const key = document.getElementById("adminPasswordInput")?.value;
-  if (!key) { showToast("Enter admin password"); return; }
+  const password = document.getElementById("adminPasswordInput")?.value;
+  if (!password) { showToast("Enter admin password"); return; }
   showToast("Verifying…");
   try {
-    const res = await fetch(CONFIG.SCRIPT_URL, {
+    const res  = await fetch(CONFIG.SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "toggleSold", id: -1, secret: key }),
+      body: JSON.stringify({ action: "login", password }),
     });
     const data = await res.json();
-    if (data.error === "Unauthorised") {
+    if (data.error || !data.token) {
       showToast("❌ Incorrect password.");
-    } else {
-      ADMIN_SECRET_KEY = key;
-      document.body.classList.add("is-admin");
-      const addBtn = document.getElementById("addItemBtn");
-      if (addBtn) addBtn.style.display = "flex";
-      closeLoginModal();
-      renderProducts();
-      showToast("✅ Admin mode active.");
+      return;
     }
+    saveAdminSession(data.token, data.expiresAt);
+    _activateAdminUI();
+    closeLoginModal();
+    showToast("✅ Admin mode active.");
   } catch {
     showToast("Connection error. Try again.");
   }
+}
+
+function _activateAdminUI() {
+  document.body.classList.add("is-admin");
+  const addBtn = document.getElementById("addItemBtn");
+  if (addBtn) addBtn.style.display = "flex";
+  renderProducts();
+}
+
+function _deactivateAdminUI() {
+  clearAdminSession();
+  ADMIN_SECRET_KEY = ""; // keep legacy var neutral
+  document.body.classList.remove("is-admin");
+  const addBtn = document.getElementById("addItemBtn");
+  if (addBtn) addBtn.style.display = "none";
+  document.getElementById("adminPanel")?.classList.remove("visible");
+  document.querySelectorAll('.admin-card-btns').forEach(el => el.remove());
+  renderProducts();
+  showToast("Logged out.");
+}
+
+// Restore session on page load if token is still valid
+function restoreAdminSession() {
+  if (getAdminToken()) _activateAdminUI();
 }
 
 // ─── INJECT ADD-ITEM BUTTON INTO NAV ─────────────────────────────────────
