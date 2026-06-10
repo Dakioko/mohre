@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mohre — The Smart Shopping Hub</title>
+  <meta name="description" content="Hand-selected luxury fashion pieces. Order in one tap via WhatsApp — delivered across Kenya." />
+  <meta property="og:title" content="Mohre Hub — The Curated Edit" />
+  <meta property="og:description" content="Hand-selected luxury fashion pieces. Order in one tap via WhatsApp — delivered across Kenya." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://mohrehub.com/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Skip to content (accessibility) -->
+<a href="#mainContent" class="skip-to-content">Skip to main content</a>
+
+<!-- ARIA live region for screen readers -->
+<div aria-live="polite" class="sr-only" id="announcer"></div>
+
+<!-- ─── STICKY HEADER ──────────────────────────────────────────────────── -->
+<div class="global-sticky-header">
+  <nav aria-label="Main navigation">
+    <button class="nav-logo-btn" id="logoTrigger" aria-label="Mohre Hub — go to top">
+      MOHRE
+    </button>
+
+    <div class="nav-actions">
+      <!-- Desktop search -->
+      <div class="search-wrapper-desktop" id="desktopSearchWrapper">
+        <button class="icon-btn" onclick="expandSearch()" id="searchIconBtn" aria-label="Search">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </button>
+        <input type="text" class="search-input" placeholder="Search…"
+          id="desktopSearch"
+          oninput="handleSearch(this.value)"
+          onblur="collapseSearch()"
+          aria-label="Search products" />
+      </div>
+
+      <!-- Mobile search toggle -->
+      <button type="button" class="icon-btn mobile-search-toggle"
+        onclick="toggleMobileSearch(true)" aria-label="Search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </button>
+
+      <!-- Cart button -->
+      <button type="button" class="cart-btn" onclick="openCart()" aria-label="View cart">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-btn-label">Bag</span>
+        <span class="cart-count" id="cartCount" aria-live="polite">0</span>
+      </button>
+    </div><!-- /.nav-actions -->
+
+    <!-- Mobile search overlay -->
+    <div class="mobile-search-overlay" id="mobileSearchOverlay">
+      <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" class="search-input" placeholder="Search the edit…"
+        id="mobileSearch"
+        oninput="handleSearch(this.value)"
+        aria-label="Search products" />
+      <button type="button" class="icon-btn" onclick="toggleMobileSearch(false)" aria-label="Close search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+</div><!-- /.global-sticky-header -->
+
+<!-- ─── HERO ────────────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-text">
+    <h1>Shop Easily.<br>Dress <span>Smarter</span>.</h1>
+    <p>Hand-selected premium wardrobe essentials. Order effortlessly in one tap — delivered across Kenya.</p>
+    <button type="button" class="hero-btn" onclick="scrollToShop()">Explore Collection</button>
+  </div>
+  <div class="hero-gallery" id="heroGallery" aria-hidden="true">
+    <!-- Populated by products.js after catalogue loads -->
+    <div class="hero-img-wrap"><div style="width:100%;height:100%;background:var(--border);aspect-ratio:3/4;border-radius:2px;"></div></div>
+    <div class="hero-img-wrap"><div style="width:100%;height:100%;background:var(--shimmer-to);aspect-ratio:3/4;border-radius:2px;"></div></div>
+  </div>
+</header>
+
+
+<!-- ─── CATEGORY FILTER BAR ──────────────────────────────────────────── -->
+<div class="filter-bar-wrapper" id="categoryBarWrapper">
+  <div class="filter-bar" id="filterBar" role="tablist" aria-label="Filter by category">
+    <button type="button" class="filter-btn active" data-category="All"         role="tab" aria-selected="true">All</button>
+    <button type="button" class="filter-btn"         data-category="Women"      role="tab">Women</button>
+    <button type="button" class="filter-btn"         data-category="Men"        role="tab">Men</button>
+    <button type="button" class="filter-btn"         data-category="Shoes"      role="tab">Shoes</button>
+    <button type="button" class="filter-btn"         data-category="Accessories"role="tab">Accessories</button>
+    <button type="button" class="filter-btn"         data-category="Unisex"     role="tab">Unisex</button>
+    <button type="button" class="filter-btn"         data-category="Sold"       role="tab">Out of Stock</button>
+  </div>
+</div>
+
+<div class="active-filters-bar" id="activeFiltersBar" aria-label="Active filters"></div>
+
+<div class="search-info-bar" id="searchInfoBar" role="status">
+  <span id="searchInfoText"></span>
+  <button class="search-clear-btn" onclick="clearSearch()">Clear ✕</button>
+</div>
+
+<!-- ─── MAIN SHOP ─────────────────────────────────────────────────────── -->
+<main id="mainContent">
+  <div class="section-header">
+    <h2 class="section-title" id="sectionTitle">All Collection</h2>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span class="section-count" id="sectionCount" aria-live="polite"></span>
+
+      <!-- Price filter dropdown -->
+      <div class="price-filter-wrapper">
+        <button class="price-filter-trigger" onclick="togglePriceFilter()"
+          id="priceFilterTrigger" aria-haspopup="true" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+          </svg>
+          <span id="priceFilterLabel">All prices</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <div class="price-filter-dropdown" id="priceFilterDropdown" role="dialog" aria-label="Price filter">
+          <div class="price-filter-header">
+            <span>Filter by price</span>
+            <button class="price-reset" onclick="clearPriceFilter()">Reset</button>
+          </div>
+          <div class="price-inputs">
+            <div class="price-input-group">
+              <label for="priceMinInput">Min</label>
+              <input type="number" id="priceMinInput" placeholder="0" value="0"
+                onchange="updatePriceFromInput()" aria-label="Minimum price" />
+            </div>
+            <span class="price-dash">—</span>
+            <div class="price-input-group">
+              <label for="priceMaxInput">Max</label>
+              <input type="number" id="priceMaxInput" placeholder="50000" value="50000"
+                onchange="updatePriceFromInput()" aria-label="Maximum price" />
+            </div>
+          </div>
+          <div class="price-slider-container">
+            <div class="price-slider-track"></div>
+            <div class="price-slider-fill" id="priceRangeFill"></div>
+            <input type="range" class="price-slider" id="priceMinSlider"
+              min="0" max="50000" value="0" step="500" aria-label="Minimum price slider" />
+            <input type="range" class="price-slider" id="priceMaxSlider"
+              min="0" max="50000" value="50000" step="500" aria-label="Maximum price slider" />
+          </div>
+          <div class="price-presets">
+            <button onclick="setPricePreset(0, 5000)">Under KSh 5K</button>
+            <button onclick="setPricePreset(5000, 15000)">KSh 5K – 15K</button>
+            <button onclick="setPricePreset(15000, 30000)">KSh 15K – 30K</button>
+            <button onclick="setPricePreset(30000, 50000)">KSh 30K+</button>
+          </div>
+        </div>
+      </div><!-- /.price-filter-wrapper -->
+
+      <select class="sort-select" id="sortSelect"
+        onchange="renderProducts()" aria-label="Sort products">
+        <option value="default">Sort: Default</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="newest">Newest first</option>
+        <option value="popular">Most Popular</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Product grid (populated by products.js) -->
+  <div class="product-grid" id="productGrid" role="list" aria-label="Products"></div>
+</main><!-- /#mainContent -->
+
+<!-- ─── ADMIN PANEL ────────────────────────────────────────────────────── -->
+<section class="admin-panel" id="adminPanel" aria-label="Admin panel">
+  <h3 class="admin-title">
+    <span id="adminPanelTitle">Add to collection</span>
+    <span class="admin-mode-badge" id="adminModeBadge">New item</span>
+  </h3>
+  <div class="admin-form">
+    <input type="hidden" id="editingId" value="" />
+
+    <div class="form-group">
+      <label for="itemName">Item name</label>
+      <input type="text" id="itemName" placeholder="e.g., Linen Blazer" />
+    </div>
+    <div class="form-group">
+      <label for="itemPrice">Price (KSh)</label>
+      <input type="number" id="itemPrice" placeholder="3200" min="0" max="1000000" />
+    </div>
+    <div class="form-group">
+      <label for="itemStock">Stock quantity</label>
+      <input type="number" id="itemStock" placeholder="10" value="10" min="0" />
+    </div>
+    <div class="form-group">
+      <label for="itemCat">Category</label>
+      <select id="itemCat" onchange="onCategoryChange(this.value)">
+        <option>Women</option>
+        <option>Men</option>
+        <option>Unisex</option>
+        <option>Shoes</option>
+        <option>Accessories</option>
+      </select>
+    </div>
+
+    <!-- Clothing sizes (hidden for shoes/accessories) -->
+    <div class="form-group" id="sizesClothingGroup">
+      <label for="itemSizes">Sizes <span style="font-weight:400;text-transform:none">(comma-separated)</span></label>
+      <input type="text" id="itemSizes" placeholder="XS, S, M, L, XL, XXL" />
+    </div>
+
+    <!-- Shoe sizes (hidden unless Shoes selected) -->
+    <div class="form-group size-field-hidden" id="sizesShoesGroup">
+      <label for="itemShoeEU">Shoe sizes <span style="font-weight:400;text-transform:none">(EU)</span></label>
+      <input type="text" id="itemShoeEU" placeholder="36, 37, 38, 39, 40, 41" />
+    </div>
+    <div class="form-group size-field-hidden" id="shoeGenderGroup">
+      <label for="itemShoeFit">Fit</label>
+      <select id="itemShoeFit">
+        <option value="Unisex">Unisex fit</option>
+        <option value="Women">Women's fit</option>
+        <option value="Men">Men's fit</option>
+      </select>
+    </div>
+
+    <div class="form-group full">
+      <label for="itemDesc">Description</label>
+      <textarea id="itemDesc" rows="2" placeholder="Material, fit, key details…"></textarea>
+    </div>
+
+    <!-- Colour variants -->
+    <div class="form-group full">
+      <label>Colour variants — optional</label>
+      <div class="color-variants-list" id="colorVariantsList"></div>
+      <button type="button" class="add-variant-btn" onclick="addColorVariant()">+ Add colour variant</button>
+    </div>
+
+    <!-- Primary image -->
+    <div class="form-group full">
+      <label>Primary image</label>
+      <div class="admin-image-upload-area" id="adminImageUploadArea">
+        <input type="file" id="itemPhotoFile" accept="image/*"
+          style="display:none" onchange="handleAdminImageFile(this)" />
+        <div class="admin-dropzone"
+          onclick="document.getElementById('itemPhotoFile').click()"
+          id="adminDropzone">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span id="adminDropzoneLabel">Tap to choose a photo</span>
+        </div>
+        <input type="hidden" id="itemPhotoUrl" />
+        <div id="adminImgPreview" style="margin-top:0.75rem;align-items:center;gap:0.75rem;">
+          <img id="adminPreviewImg"
+            style="width:72px;height:90px;object-fit:cover;border-radius:4px;border:1px solid var(--border);"
+            src="" alt="Preview" />
+          <button type="button" onclick="clearAdminImage()"
+            style="font-size:0.7rem;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional photos -->
+    <div class="form-group full">
+      <label>Additional photos <span style="font-weight:400;text-transform:none">(optional — shown in gallery)</span></label>
+      <div id="extraPhotosList" class="extra-photos-list"></div>
+      <label class="admin-dropzone extra-photo-add" style="margin-top:0.4rem;cursor:pointer;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add another photo
+        <input type="file" accept="image/*" multiple style="display:none" onchange="handleExtraPhotos(this)" />
+      </label>
+    </div>
+  </div><!-- /.admin-form -->
+
+  <div style="margin-top:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+    <button class="btn-primary" id="adminSubmitBtn" onclick="submitItem()">Post item</button>
+    <button class="btn-ghost" onclick="cancelAdminPanel()">Cancel</button>
+  </div>
+</section><!-- /.admin-panel -->
+
+<!-- ─── PRODUCT DETAIL PANEL ─────────────────────────────────────────── -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailPanel()"
+  aria-hidden="true"></div>
+<div class="detail-panel" id="detailPanel"
+  role="dialog" aria-label="Product details" aria-modal="true">
+  <div class="detail-header">
+    <div class="detail-header-actions">
+      <button class="detail-share-btn" onclick="shareProduct()" id="detailShareBtn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+        </svg>
+        Share
+      </button>
+    </div>
+    <button class="detail-close-btn" onclick="closeDetailPanel()" aria-label="Close details">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-footer" id="detailFooter">
+    <button class="detail-save-btn" onclick="detailSaveToCart()" id="detailSaveBtn"
+      aria-label="Add to bag">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 4v16m8-8H4"/>
+      </svg>
+      Save
+    </button>
+    <button class="detail-order-btn" onclick="detailOrder()" id="detailOrderBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+      </svg>
+      Order via WhatsApp
+    </button>
+  </div>
+</div><!-- /.detail-panel -->
+
+<!-- ─── CART DRAWER ───────────────────────────────────────────────────── -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()" aria-hidden="true"></div>
+<div class="cart-drawer" id="cartDrawer"
+  role="dialog" aria-label="Shopping cart" aria-modal="true">
+  <div class="cart-header">
+    <h3>Your selection</h3>
+    <button class="cart-close-btn" onclick="closeCart()" aria-label="Close cart">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cart-body" id="cartBody"></div>
+  <div class="cart-footer" id="cartFooter" style="display:none;">
+    <div class="free-delivery-progress" id="freeDeliveryProgress">
+      <div class="progress-text" id="freeDeliveryMsg"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+    <div class="cart-total">
+      <span class="cart-total-label">Subtotal</span>
+      <span class="cart-total-amount" id="cartSubtotal">KSh 0</span>
+    </div>
+    <div class="cart-total">
+      <span class="cart-total-label">Delivery</span>
+      <span class="cart-total-amount" id="cartDelivery">KSh 350</span>
+    </div>
+    <div class="cart-total total">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-amount" id="cartTotal">KSh 0</span>
+    </div>
+    <button class="cart-checkout-btn" onclick="checkoutCart()">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+      </svg>
+      Order all via WhatsApp
+    </button>
+    <p class="cart-note">We'll confirm availability and share payment details over WhatsApp.</p>
+  </div>
+</div><!-- /.cart-drawer -->
+
+<!-- ─── MODALS ─────────────────────────────────────────────────────────── -->
+
+<!-- Admin login -->
+<div class="modal-overlay" id="loginModal"
+  onclick="if(event.target===this)closeLoginModal()">
+  <div class="login-modal" role="dialog" aria-label="Admin login" aria-modal="true">
+    <h3 class="modal-title">Admin access</h3>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label for="adminPasswordInput">Password</label>
+      <input type="password" id="adminPasswordInput"
+        onkeydown="if(event.key==='Enter')verifyAdminLogin()"
+        style="width:100%;" autocomplete="current-password" />
+    </div>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn-ghost" onclick="closeLoginModal()">Cancel</button>
+      <button class="btn-primary" onclick="verifyAdminLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- Size selector -->
+<div class="size-modal-overlay" id="sizeModal" onclick="closeSizeModal(event)">
+  <div class="size-modal" onclick="event.stopPropagation()"
+    role="dialog" aria-label="Select size" aria-modal="true">
+    <p class="modal-title" id="sizeModalName" style="font-size:1.2rem;margin-bottom:0.25rem;"></p>
+    <p style="text-align:center;font-weight:500;margin-bottom:1rem;" id="sizeModalPrice"></p>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;">Select your size</span>
+      <button class="size-guide-link" onclick="showSizeGuide()">Size guide →</button>
+    </div>
+    <div class="size-modal-chips" id="sizeModalChips"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+      <button class="size-modal-cancel" onclick="closeSizeModal('')">Cancel</button>
+      <button class="size-modal-confirm" id="sizeModalConfirmBtn" onclick="confirmOrder()">
+        Order via WhatsApp →
+      </button>
+    </div>
+    <p class="size-skip-note">No size selected? We'll confirm the right fit over WhatsApp.</p>
+  </div>
+</div>
+
+<!-- Size guide -->
+<div class="modal-overlay" id="sizeGuideModal"
+  onclick="if(event.target===this)closeSizeGuideModal()">
+  <div class="login-modal" style="max-width:480px;"
+    role="dialog" aria-label="Size guide" aria-modal="true">
+    <h3 class="modal-title">Size guide</h3>
+    <p style="font-size:0.75rem;color:var(--muted);text-align:center;margin-bottom:1rem;">
+      UK sizing. When between sizes, we recommend sizing up.
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:0.75rem;" id="sizeGuideTable">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="text-align:left;padding:0.4rem 0.5rem;color:var(--muted);font-weight:600;font-size:0.65rem;text-transform:uppercase;">Size</th>
+          <th style="padding:0.4rem 0.5rem;color:var(--muted);font-weight:600;font-size:0.65rem;text-transform:uppercase;">UK</th>
+          <th style="padding:0.4rem 0.5rem;color:var(--muted);font-weight:600;font-size:0.65rem;text-transform:uppercase;">EU</th>
+          <th style="padding:0.4rem 0.5rem;color:var(--muted);font-weight:600;font-size:0.65rem;text-transform:uppercase;">Chest (cm)</th>
+          <th style="padding:0.4rem 0.5rem;color:var(--muted);font-weight:600;font-size:0.65rem;text-transform:uppercase;">Waist (cm)</th>
+        </tr>
+      </thead>
+      <tbody id="sizeGuideBody"></tbody>
+    </table>
+    <p style="font-size:0.7rem;color:var(--muted);margin-top:0.75rem;text-align:center;line-height:1.5;">
+      Unsure? Message us on WhatsApp and we'll find your perfect fit.
+    </p>
+    <button class="btn-primary" style="width:100%;margin-top:1rem;" onclick="closeSizeGuideModal()">Got it</button>
+  </div>
+</div>
+
+<!-- Authenticity guarantee -->
+<div class="modal-overlay" id="guaranteeModal"
+  onclick="if(event.target===this)closeGuaranteeModal()">
+  <div class="auth-guarantee-modal"
+    role="dialog" aria-label="Authenticity guarantee" aria-modal="true">
+    <h3 class="modal-title">Authenticity guaranteed</h3>
+    <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+      Every item is personally sourced and verified by our team before listing.
+    </p>
+    <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+      If you have concerns, contact us within 48 hours via WhatsApp — full refund or replacement.
+    </p>
+    <button class="btn-primary" style="width:100%;" onclick="closeGuaranteeModal()">Got it</button>
+  </div>
+</div>
+
+<!-- Order summary (multi-item checkout) -->
+<div class="modal-overlay" id="orderSummaryModal"
+  onclick="if(event.target===this)closeOrderSummaryModal()">
+  <div class="order-summary-modal"
+    role="dialog" aria-label="Order summary" aria-modal="true">
+    <h3 class="modal-title">Order Summary</h3>
+    <div id="orderSummaryContent"></div>
+    <div class="delivery-info">
+      <label for="deliveryAddress">Delivery address (optional)</label>
+      <textarea id="deliveryAddress" placeholder="We'll confirm via WhatsApp" rows="2"></textarea>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+      <button class="btn-ghost" onclick="closeOrderSummaryModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmOrderWithAddress()">Send to WhatsApp →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── LIGHTBOX ──────────────────────────────────────────────────────── -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()"
+  role="dialog" aria-label="Image viewer" aria-modal="true">
+  <button class="lightbox-close" onclick="closeLightbox()" aria-label="Close">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="Product photo" />
+  <button class="lightbox-prev" onclick="event.stopPropagation();previousImage()" aria-label="Previous image">‹</button>
+  <button class="lightbox-next" onclick="event.stopPropagation();nextImage()" aria-label="Next image">›</button>
+</div>
+
+<!-- ─── UTILITY ───────────────────────────────────────────────────────── -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<button class="back-to-top" id="backToTop"
+  onclick="window.scrollTo({top:0,behavior:'smooth'})"
+  aria-label="Back to top">
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+  </svg>
+</button>
+
+<!-- WhatsApp FAB -->
+<button class="fab-wa" onclick="openWhatsApp()" aria-label="Chat on WhatsApp">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+  </svg>
+</button>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-strip">
+    <span class="footer-logo-small">Mohre <span>Hub</span></span>
+    <nav class="footer-links" aria-label="Footer links">
+      <a href="https://wa.me/254717545221" class="footer-link">+254 717 545 221</a>
+      <a href="https://instagram.com/mohrehub" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+      <button class="footer-link guarantee-link" onclick="openGuaranteeModal()">Authenticity</button>
+      <button class="footer-link" onclick="openReturnPolicy()">Returns</button>
+    </nav>
+    <div class="footer-right">
+      <button class="footer-darkmode-btn" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+        Dark mode
+      </button>
+      <span class="footer-copy">© 2026 Mohre Hub</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── SCRIPTS ───────────────────────────────────────────────────────── -->
+<!--
+  Load order matters — each file depends on symbols defined before it:
+  config → api → ui → filters → cart → products → detail → modals → admin → main
+-->
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="ui.js"></script>
+<script src="filters.js"></script>
+<script src="cart.js"></script>
+<script src="products.js"></script>
+<script src="detail.js"></script>
+<script src="modals.js"></script>
+<script src="admin.js"></script>
+<script src="main.js"></script>
+
+</body>
+</html>
