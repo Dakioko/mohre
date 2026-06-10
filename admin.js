@@ -1,3 +1,39 @@
+// ─── CLOUDINARY CONFIG ────────────────────────────────────────────────────
+const CLOUDINARY_CLOUD = "dgvpgo3bw";
+const CLOUDINARY_PRESET = "mohrehub_uploads";
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`;
+
+// Tracks how many uploads are in-flight so submitItem waits for all to finish
+let _uploadsInProgress = 0;
+
+function _setUploading(delta) {
+  _uploadsInProgress = Math.max(0, _uploadsInProgress + delta);
+  const btn = document.getElementById("adminSubmitBtn");
+  if (!btn) return;
+  if (_uploadsInProgress > 0) {
+    btn.disabled = true;
+    btn.textContent = `Uploading (${_uploadsInProgress})…`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = document.getElementById("editingId")?.value ? "Save changes" : "Post item";
+  }
+}
+
+/**
+ * Upload a File object to Cloudinary and return the secure URL.
+ * @param {File} file
+ * @returns {Promise<string>} secure URL
+ */
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", CLOUDINARY_PRESET);
+  const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Cloudinary upload failed");
+  const data = await res.json();
+  return data.secure_url;
+}
+
 // ─── ADMIN PANEL TOGGLE ───────────────────────────────────────────────────
 function toggleAdminPanel() {
   const panel = document.getElementById("adminPanel");
@@ -72,20 +108,23 @@ function removeColorVariant(idx) {
   renderColorVariants();
 }
 
-function handleVariantImageFile(input, idx) {
+async function handleVariantImageFile(input, idx) {
   const file = input.files && input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    colorVariants[idx].photo = e.target.result;
-    // Update the preview thumbnail next to the input
-    const row = input.closest('.color-variant-row');
-    if (row) {
-      const preview = row.querySelector('.variant-img-preview');
-      if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
-    }
-  };
-  reader.readAsDataURL(file);
+
+  const row = input.closest('.color-variant-row');
+  const preview = row?.querySelector('.variant-img-preview');
+
+  _setUploading(+1);
+  try {
+    const url = await uploadToCloudinary(file);
+    colorVariants[idx].photo = url;
+    if (preview) { preview.src = url; preview.style.display = 'block'; }
+  } catch (e) {
+    showToast("Variant photo upload failed. Try again.");
+  } finally {
+    _setUploading(-1);
+  }
 }
 
 // ─── COLOR NAME → HEX LOOKUP ─────────────────────────────────────────────
@@ -360,17 +399,24 @@ async function toggleSold(id) {
 // ─── EXTRA PHOTOS ─────────────────────────────────────────────────────────
 let extraPhotos = []; // array of base64 strings
 
-function handleExtraPhotos(input) {
+async function handleExtraPhotos(input) {
   const files = Array.from(input.files || []);
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      extraPhotos.push(e.target.result);
+  if (!files.length) return;
+  input.value = ""; // reset immediately so same file can be re-added
+
+  // Upload all selected files in parallel
+  _setUploading(+files.length);
+  await Promise.all(files.map(async file => {
+    try {
+      const url = await uploadToCloudinary(file);
+      extraPhotos.push(url);
       renderExtraPhotos();
-    };
-    reader.readAsDataURL(file);
-  });
-  input.value = ""; // reset so same file can be added again if needed
+    } catch (e) {
+      showToast(`Failed to upload ${file.name}. Try again.`);
+    } finally {
+      _setUploading(-1);
+    }
+  }));
 }
 
 function removeExtraPhoto(idx) {
@@ -403,20 +449,26 @@ function previewAdminImage(url) {
 }
 
 // ─── FILE UPLOAD ──────────────────────────────────────────────────────────
-function handleAdminImageFile(input) {
+async function handleAdminImageFile(input) {
   const file = input.files && input.files[0];
   if (!file) return;
 
   const label = document.getElementById("adminDropzoneLabel");
-  if (label) label.textContent = file.name;
+  if (label) label.textContent = "Uploading…";
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
+  _setUploading(+1);
+  try {
+    const url = await uploadToCloudinary(file);
     const urlInput = document.getElementById("itemPhotoUrl");
-    if (urlInput) urlInput.value = e.target.result;
-    previewAdminImage(e.target.result);
-  };
-  reader.readAsDataURL(file);
+    if (urlInput) urlInput.value = url;
+    previewAdminImage(url);
+    if (label) label.textContent = file.name;
+  } catch (e) {
+    showToast("Photo upload failed. Check your connection.");
+    if (label) label.textContent = "Tap to choose a photo";
+  } finally {
+    _setUploading(-1);
+  }
 }
 
 function clearAdminImage() {
