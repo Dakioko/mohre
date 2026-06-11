@@ -113,6 +113,7 @@
 <div class="filter-bar-wrapper" id="categoryBarWrapper">
   <div class="filter-bar" id="filterBar" role="tablist" aria-label="Filter by category">
     <button type="button" class="filter-btn active" data-category="All"         role="tab" aria-selected="true">All</button>
+    <button type="button" class="filter-btn"         data-category="New"        role="tab">New In</button>
     <button type="button" class="filter-btn"         data-category="Women"      role="tab">Women</button>
     <button type="button" class="filter-btn"         data-category="Men"        role="tab">Men</button>
     <button type="button" class="filter-btn"         data-category="Unisex"     role="tab">Unisex</button>
@@ -132,7 +133,16 @@
 <main id="mainContent">
   <div class="section-header">
     <h2 class="section-title" id="sectionTitle">All Collection</h2>
-    <span class="section-count" id="sectionCount" aria-live="polite"></span>
+    <div class="section-header-right">
+      <span class="section-count" id="sectionCount" aria-live="polite"></span>
+      <select class="sort-select" id="sortSelect" aria-label="Sort products"
+        onchange="currentSort = this.value; renderProducts()">
+        <option value="default">Sort: Default</option>
+        <option value="newest" selected>Newest</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+      </select>
+    </div>
   </div>
 
   <!-- Product grid (populated by products.js) -->
@@ -427,8 +437,9 @@
     <h3 class="modal-title">Order Summary</h3>
     <div id="orderSummaryContent"></div>
     <div class="delivery-info">
-      <label for="deliveryAddress">Delivery address (optional)</label>
+      <label for="deliveryAddress">Delivery address <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
       <textarea id="deliveryAddress" placeholder="We'll confirm via WhatsApp" rows="2"></textarea>
+      <p class="delivery-address-hint">💡 Adding your address speeds up delivery confirmation.</p>
     </div>
     <div style="display:flex;gap:0.5rem;margin-top:1rem;">
       <button class="btn-ghost" onclick="closeOrderSummaryModal()">Cancel</button>

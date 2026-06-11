@@ -4,7 +4,7 @@
  * Fetch all products from the backend with retry + exponential backoff.
  * @param {number} retries - number of attempts before throwing
  */
-async function apiGet(retries = 3) {
+async function apiGet(retries = CONFIG.API_RETRIES) {
   for (let attempt = 0; attempt < retries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 9000);

@@ -4,12 +4,24 @@
 const _slideshowTimers = new Map();
 
 /**
- * Return the filtered product list based on current category and search.
+ * Returns true if a product was created within NEW_ARRIVAL_DAYS days.
+ * Products without a createdAt value (pre-existing stock) return false.
+ * @param {object} product
+ * @returns {boolean}
+ */
+function isNewArrival(product) {
+  if (!product.createdAt) return false;
+  const age = Date.now() - new Date(product.createdAt).getTime();
+  return age < NEW_ARRIVAL_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Return the filtered + sorted product list based on current state.
  */
 function getFiltered() {
   let base =
-    currentFilter === "All" ? products.filter(p => !p.isSold) :
-    currentFilter === "New" ? products.filter(p => p.isNew && !p.isSold) :
+    currentFilter === "All"  ? products.filter(p => !p.isSold) :
+    currentFilter === "New"  ? products.filter(p => isNewArrival(p) && !p.isSold) :
     products.filter(p => p.category === currentFilter && !p.isSold);
 
   if (currentSearch) {
@@ -20,6 +32,22 @@ function getFiltered() {
       (p.category && p.category.toLowerCase().includes(q))
     );
   }
+
+  // ── Sort ──────────────────────────────────────────────────
+  if (currentSort === "price-asc") {
+    base = [...base].sort((a, b) => Number(a.price) - Number(b.price));
+  } else if (currentSort === "price-desc") {
+    base = [...base].sort((a, b) => Number(b.price) - Number(a.price));
+  } else if (currentSort === "newest") {
+    base = [...base].sort((a, b) => {
+      // Products without createdAt sort to the end
+      if (!a.createdAt && !b.createdAt) return 0;
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }
+  // "default" — preserve backend order, no sort needed
 
   return base;
 }
@@ -57,7 +85,6 @@ function renderProducts() {
   if (countEl) countEl.textContent = `${filtered.length} piece${filtered.length !== 1 ? "s" : ""}`;
 
   if (filtered.length === 0) {
-    // Stop all slideshows before clearing grid
     _slideshowTimers.forEach(timerId => clearInterval(timerId));
     _slideshowTimers.clear();
     grid.innerHTML = `
@@ -78,19 +105,18 @@ function renderProducts() {
   const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23eae8e4'/%3E%3Ctext x='150' y='200' text-anchor='middle' fill='%23b0a898' font-size='13'%3ENo image%3C/text%3E%3C/svg%3E`;
 
   // Check if the filtered set has changed — if same IDs in same order, skip full rebuild
-  const currentIds = Array.from(grid.querySelectorAll('.product-card')).map(c => parseInt(c.dataset.id));
+  const currentIds  = Array.from(grid.querySelectorAll('.product-card')).map(c => parseInt(c.dataset.id));
   const filteredIds = filtered.map(p => p.id);
-  const sameSet = currentIds.length === filteredIds.length && filteredIds.every((id, i) => id === currentIds[i]);
+  const sameSet     = currentIds.length === filteredIds.length && filteredIds.every((id, i) => id === currentIds[i]);
 
   if (sameSet) {
-    // Only update wishlist button states — avoid full rebuild and slideshow restart
     _updateWishlistStates();
     const isAdmin = document.body.classList.contains("is-admin");
     if (isAdmin) addAdminControls();
     return;
   }
 
-  // Full rebuild needed (filter/search changed)
+  // Full rebuild
   _slideshowTimers.forEach(timerId => clearInterval(timerId));
   _slideshowTimers.clear();
 
@@ -98,7 +124,8 @@ function renderProducts() {
     let variants = [];
     try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
     const hasVariants = variants.length > 0;
-    const inWishlist = isInWishlist(p.id);
+    const inWishlist  = isInWishlist(p.id);
+    const showNewBadge = isNewArrival(p);
 
     const swatchesHTML = hasVariants ? `
       <div class="card-swatches">
@@ -118,7 +145,7 @@ function renderProducts() {
         onclick="openDetailPanel(${p.id})"
         role="button"
         tabindex="0"
-        aria-label="${escapeHtml(p.name)}, KSh ${Number(p.price).toLocaleString()}${p.isSold ? ', sold out' : ''}">
+        aria-label="${escapeHtml(p.name)}, ${fmtPrice(p.price)}${p.isSold ? ', sold out' : ''}">
         <div class="card-img-wrap" id="imgWrap${p.id}">
           <div class="card-img-placeholder">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +160,11 @@ function renderProducts() {
             loading="lazy"
             onload="this.closest('.card-img-wrap').classList.add('img-loaded')"
             onerror="this.src='${placeholder}'">` : ''}
-          ${p.isSold ? `<span class="card-badge sold">Sold</span>` : ''}
+          ${p.isSold
+            ? `<span class="card-badge sold">Sold</span>`
+            : showNewBadge
+              ? `<span class="card-badge new-arrival">New</span>`
+              : ''}
           <button class="card-wishlist-btn${inWishlist ? ' active' : ''}"
             onclick="event.stopPropagation();toggleWishlist(${p.id})"
             aria-label="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">
@@ -149,7 +180,7 @@ function renderProducts() {
         <div class="card-meta-minimal">
           <h3 class="card-title-minimal">${escapeHtml(p.name)}</h3>
           ${swatchesHTML}
-          <p class="card-price-minimal">KSh ${Number(p.price).toLocaleString()}</p>
+          <p class="card-price-minimal">${fmtPrice(p.price)}</p>
         </div>
       </article>`;
   }).join("");
@@ -198,21 +229,18 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
   const card = document.querySelector(`.product-card[data-id="${productId}"]`);
   if (!card) return;
 
-  // Pause slideshow for this card when user manually picks a color
   card._swatchSwapped = true;
   clearInterval(_slideshowTimers.get(productId));
   _slideshowTimers.delete(productId);
 
-  // Update active swatch
   card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === variantIdx));
 
-  // Swap card image
   if (photoUrl) {
     const imgWrap = card.querySelector('.card-img-wrap');
-    const img = card.querySelector('.card-img');
+    const img     = card.querySelector('.card-img');
     if (img) {
       imgWrap?.classList.remove('img-loaded');
-      img.src = photoUrl;
+      img.src    = photoUrl;
       img.onload = () => imgWrap?.classList.add('img-loaded');
     }
   }
@@ -220,12 +248,10 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
 
 // ─── CARD CROSSFADE SLIDESHOW ─────────────────────────────────────────────
 function initCardSlideshows() {
-  // Clear any existing timers from previous render
   _slideshowTimers.forEach(timerId => clearInterval(timerId));
   _slideshowTimers.clear();
 
   products.filter(p => !p.isSold).forEach(p => {
-    // Collect all images for this product
     const images = [];
     if (p.photo) images.push(p.photo);
     try {
@@ -241,7 +267,7 @@ function initCardSlideshows() {
       }
     } catch (e) {}
 
-    if (images.length < 2) return; // nothing to cycle
+    if (images.length < 2) return;
 
     const imgEl = document.getElementById(`img${p.id}`);
     if (!imgEl) return;
@@ -256,9 +282,9 @@ function initCardSlideshows() {
       if (!img) return;
 
       img.style.transition = 'opacity 0.6s ease';
-      img.style.opacity = '0';
+      img.style.opacity    = '0';
       setTimeout(() => {
-        img.src = images[idx];
+        img.src    = images[idx];
         img.onload = () => { img.style.opacity = '1'; };
         setTimeout(() => { img.style.opacity = '1'; }, 100);
       }, 600);
@@ -266,7 +292,6 @@ function initCardSlideshows() {
 
     _slideshowTimers.set(p.id, timerId);
 
-    // Pause on hover or touch
     const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
     if (card) {
       card.addEventListener('mouseenter', () => {
@@ -284,7 +309,7 @@ function initCardSlideshows() {
 // ─── HERO GALLERY ─────────────────────────────────────────────────────────
 function populateHeroGallery() {
   const available = products.filter(p => !p.isSold && p.photo);
-  const picks = available.slice(0, 2);
+  const picks     = available.slice(0, 2);
   if (picks.length < 2) return;
 
   const gallery = document.getElementById("heroGallery");
@@ -303,11 +328,10 @@ async function loadProducts() {
   showSkeletons(6);
   try {
     products = await apiGet();
-    reconcileCart();
+    setTimeout(reconcileCart, 0); // defer so UI renders before toast fires
     renderProducts();
     populateHeroGallery();
     checkProductParam();
-    updateFilterCounts();
     applySavedFilters();
   } catch (e) {
     console.error('Failed to load products:', e);

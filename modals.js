@@ -9,7 +9,7 @@ function openSizeModal(id) {
   const nameEl = document.getElementById("sizeModalName");
   const priceEl = document.getElementById("sizeModalPrice");
   if (nameEl) nameEl.textContent = p.name;
-  if (priceEl) priceEl.textContent = `KSh ${Number(p.price).toLocaleString()}`;
+  if (priceEl) priceEl.textContent = fmtPrice(p.price);
 
   const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
   if (!sizes.length) {
@@ -57,7 +57,7 @@ function openSizeModalForCart(id) {
   const nameEl = document.getElementById("sizeModalName");
   const priceEl = document.getElementById("sizeModalPrice");
   if (nameEl) nameEl.textContent = p.name;
-  if (priceEl) priceEl.textContent = `KSh ${Number(p.price).toLocaleString()}`;
+  if (priceEl) priceEl.textContent = fmtPrice(p.price);
 
   const chipsEl = document.getElementById("sizeModalChips");
   if (chipsEl) {
@@ -138,7 +138,7 @@ function sendWhatsApp(p, size, color, qty, triggerEl) {
   const colorStr = color ? `\nColour: *${color}*` : "";
   const qtyStr   = qtyVal > 1 ? `\nQuantity: *${qtyVal}*` : "";
   const msg = encodeURIComponent(
-    `Hi! I'd love to order from Mohre Hub 🛍️\n\n*${p.name}*\nPrice: KSh ${Number(p.price).toLocaleString()}${sizeStr}${colorStr}${qtyStr}\n\nPlease share payment and delivery details.`
+    `Hi! I'd love to order from Mohre Hub 🛍️\n\n*${p.name}*\nPrice: ${fmtPrice(p.price)}${sizeStr}${colorStr}${qtyStr}\n\nPlease share payment and delivery details.`
   );
   window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${msg}`, "_blank");
   vibrateOnAction();
@@ -159,16 +159,16 @@ function showOrderSummaryModal() {
             ${item.color ? `(${escapeHtml(item.color)})`        : ''}
             ×${item.qty}
           </span>
-          <span>KSh ${(item.price * item.qty).toLocaleString()}</span>
+          <span>KSh ${Number(item.price * item.qty).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>`).join('')}
     </div>
     <div class="order-totals">
-      <div><span>Subtotal</span><span>KSh ${subtotal.toLocaleString()}</span></div>
+      <div><span>Subtotal</span><span>KSh ${Number(subtotal).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
       <div>
         <span>Delivery</span>
-        <span>${deliveryFee === 0 ? 'FREE' : `KSh ${deliveryFee.toLocaleString()}`}</span>
+        <span>${deliveryFee === 0 ? 'FREE' : fmtPrice(deliveryFee)}</span>
       </div>
-      <div class="total"><span>Total</span><span>KSh ${total.toLocaleString()}</span></div>
+      <div class="total"><span>Total</span><span>KSh ${Number(total).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
     </div>`;
 
   const summaryDiv = document.getElementById("orderSummaryContent");
@@ -193,10 +193,10 @@ function confirmOrderWithAddress() {
       item.size  && `Size: *${item.size}*`,
       item.color && `Colour: *${item.color}*`
     ].filter(Boolean).join(', ');
-    return `• *${item.name}* ×${item.qty} — KSh ${(item.price * item.qty).toLocaleString()}${details ? ` (${details})` : ''}`;
+    return `• *${item.name}* ×${item.qty} — KSh ${Number(item.price * item.qty).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${details ? ` (${details})` : ''}`;
   });
 
-  let msg = `Hi! I'd like to order from Mohre Hub 🛍️\n\n${lines.join('\n')}\n\n*Total: KSh ${total.toLocaleString()}*`;
+  let msg = `Hi! I'd like to order from Mohre Hub 🛍️\n\n${lines.join('\n')}\n\n*Total: KSh ${Number(total).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`;
   if (address) msg += `\n\nDelivery address: ${address}`;
   msg += `\n\nPlease share payment and delivery details.`;
 
@@ -273,14 +273,7 @@ function closeReturnPolicy() {
 }
 
 // ─── SIZE GUIDE MODAL ─────────────────────────────────────────────────────
-const SIZE_GUIDE_DATA = [
-  { label: "XS",  uk: "6",   eu: "34", chest: "82–86",  waist: "62–66"  },
-  { label: "S",   uk: "8",   eu: "36", chest: "87–91",  waist: "67–71"  },
-  { label: "M",   uk: "10",  eu: "38", chest: "92–96",  waist: "72–76"  },
-  { label: "L",   uk: "12",  eu: "40", chest: "97–101", waist: "77–81"  },
-  { label: "XL",  uk: "14",  eu: "42", chest: "102–106",waist: "82–86"  },
-  { label: "XXL", uk: "16",  eu: "44", chest: "107–112",waist: "87–92"  },
-];
+// SIZE_GUIDE_DATA is defined in config.js
 
 function showSizeGuide() {
   const tbody = document.getElementById("sizeGuideBody");

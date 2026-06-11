@@ -276,6 +276,10 @@ function renderColorVariants() {
 
 // ─── SUBMIT (add or update) ───────────────────────────────────────────────
 async function submitItem() {
+  if (_uploadsInProgress > 0) {
+    showToast("Please wait for uploads to finish.");
+    return;
+  }
   const editingId = document.getElementById("editingId")?.value;
   const isEdit    = !!editingId;
   const name      = document.getElementById("itemName")?.value.trim();
@@ -296,6 +300,7 @@ async function submitItem() {
   if (!name || !price) { showToast("Name and price are required."); return; }
 
   const product = { name, price, category: cat, sizes, desc, photo, variants: variantsJSON, stock, photos: extraPhotos.length ? JSON.stringify(extraPhotos) : "" };
+  if (!isEdit) product.createdAt = new Date().toISOString();
 
   try {
     if (isEdit) {
@@ -317,7 +322,12 @@ function openEditPanel(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
 
-  document.getElementById("editingId") && (document.getElementById("editingId").value = id);
+  const editingIdEl = document.getElementById("editingId");
+  if (!editingIdEl) {
+    console.warn("openEditPanel: #editingId element not found — edit cannot be saved correctly.");
+    return;
+  }
+  editingIdEl.value = id;
   document.getElementById("adminPanelTitle") && (document.getElementById("adminPanelTitle").textContent = "Edit item");
   document.getElementById("adminModeBadge")  && (document.getElementById("adminModeBadge").textContent = "Editing");
   document.getElementById("adminSubmitBtn")  && (document.getElementById("adminSubmitBtn").textContent = "Save changes");

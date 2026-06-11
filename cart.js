@@ -55,6 +55,7 @@ function renderWishlistBody() {
     if (!p) return null;
     return { ...p, _wishlistPhoto: w.photo || p.photo, _wishlistColor: w.color };
   }).filter(Boolean);
+
   body.innerHTML = wishlistProducts.map(p => `
     <div class="cart-item">
       <img class="cart-item-img"
@@ -65,10 +66,16 @@ function renderWishlistBody() {
       <div class="cart-item-info">
         <p class="cart-item-name">${escapeHtml(p.name)}</p>
         ${p._wishlistColor ? `<p class="cart-item-meta">${escapeHtml(p._wishlistColor)}</p>` : ''}
-        <p class="cart-item-price">KSh ${Number(p.price).toLocaleString()}</p>
-        <button class="wishlist-item-view-btn" onclick="closeWishlist();openDetailPanel(${p.id})">
-          View item →
-        </button>
+        <p class="cart-item-price">${fmtPrice(p.price)}</p>
+        <div style="display:flex;gap:0.5rem;margin-top:0.35rem;flex-wrap:wrap;">
+          <button class="wishlist-item-view-btn" onclick="closeWishlist();openDetailPanel(${p.id})">
+            View item →
+          </button>
+          ${!p.isSold ? `
+          <button class="wishlist-move-to-cart-btn" onclick="wishlistMoveToCart(${p.id})">
+            Add to cart
+          </button>` : ''}
+        </div>
       </div>
       <button class="cart-item-remove" onclick="toggleWishlist(${p.id})" aria-label="Remove ${escapeHtml(p.name)}">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,6 +84,31 @@ function renderWishlistBody() {
       </button>
     </div>
   `).join("");
+}
+
+/**
+ * Add a wishlist item directly to the cart without opening the detail panel.
+ * Uses the stored variant photo and colour if available.
+ */
+function wishlistMoveToCart(productId) {
+  const w = wishlist.find(x => x.id === productId);
+  const p = products.find(x => x.id === productId);
+  if (!p || p.isSold) return;
+
+  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  if (sizes.length) {
+    // Product has sizes — close wishlist, open detail panel so user can pick one
+    closeWishlist();
+    openDetailPanel(productId);
+    showToast("Please choose a size to add to cart.");
+    return;
+  }
+
+  // No sizes — add directly using _pushToCart so the variant photo
+  // resolves correctly (same path as addToCart / detailSaveToCart).
+  _pushToCart(p, null, w?.color || null, 1);
+  showToast(`${p.name} added to cart.`);
 }
 
 function openWishlist() {
@@ -110,7 +142,6 @@ function toggleWishlist(productId, variantPhoto, colorName) {
   if (idx > -1) {
     wishlist.splice(idx, 1);
   } else {
-    // Resolve variant photo if not passed in
     let photo = variantPhoto || null;
     if (!photo) {
       const p = products.find(x => x.id === productId);
@@ -120,9 +151,7 @@ function toggleWishlist(productId, variantPhoto, colorName) {
   }
   saveWishlist();
   updateWishlistBadge();
-  // Update only the affected card's heart button — no full grid rebuild
   _updateWishlistStates();
-  // Re-render wishlist drawer if open
   if (document.getElementById("wishlistDrawer")?.classList.contains("open")) {
     renderWishlistBody();
   }
@@ -143,32 +172,31 @@ function updateCartBadge() {
 
 // ─── TOTALS ───────────────────────────────────────────────────────────────
 function updateCartWithDetails() {
-  const subtotal = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
+  const subtotal   = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
   const deliveryFee = subtotal > 5000 ? 0 : 200;
-  const total = subtotal + deliveryFee;
+  const total      = subtotal + deliveryFee;
 
   const subtotalEl = document.getElementById("cartSubtotal");
   const deliveryEl = document.getElementById("cartDelivery");
-  const totalEl = document.getElementById("cartTotal");
+  const totalEl    = document.getElementById("cartTotal");
 
-  if (subtotalEl) subtotalEl.textContent = `KSh ${subtotal.toLocaleString()}`;
-  if (deliveryEl) deliveryEl.textContent = deliveryFee === 0 ? "FREE" : `KSh ${deliveryFee.toLocaleString()}`;
-  if (totalEl) totalEl.textContent = `KSh ${total.toLocaleString()}`;
+  if (subtotalEl) subtotalEl.textContent = fmtPrice(subtotal);
+  if (deliveryEl) deliveryEl.textContent = deliveryFee === 0 ? "FREE" : fmtPrice(deliveryFee);
+  if (totalEl)    totalEl.textContent    = fmtPrice(total);
 
-  // Free delivery progress bar
-  const progressDiv = document.getElementById("freeDeliveryProgress");
-  const progressMsg = document.getElementById("freeDeliveryMsg");
+  const progressDiv  = document.getElementById("freeDeliveryProgress");
+  const progressMsg  = document.getElementById("freeDeliveryMsg");
   const progressFill = document.getElementById("progressFill");
 
   if (!progressDiv) return;
 
   if (subtotal > 0 && subtotal < 5000) {
     const remaining = 5000 - subtotal;
-    if (progressMsg) progressMsg.innerHTML = `Add KSh ${remaining.toLocaleString()} more for FREE delivery ✨`;
+    if (progressMsg)  progressMsg.innerHTML = `Add ${fmtPrice(remaining)} more for FREE delivery ✨`;
     if (progressFill) progressFill.style.width = `${(subtotal / 5000) * 100}%`;
     progressDiv.style.display = "block";
   } else if (subtotal >= 5000) {
-    if (progressMsg) progressMsg.innerHTML = "🎉 You qualify for FREE delivery!";
+    if (progressMsg)  progressMsg.innerHTML = "🎉 You qualify for FREE delivery!";
     if (progressFill) progressFill.style.width = "100%";
     progressDiv.style.display = "block";
   } else {
@@ -177,12 +205,61 @@ function updateCartWithDetails() {
 }
 
 // ─── ADD / REMOVE / CHANGE QTY ────────────────────────────────────────────
+
+/**
+ * Resolve the correct photo for a cart entry, preferring the variant photo
+ * when a colour is selected.
+ * @param {object} p - product
+ * @param {string|null} color
+ * @returns {string}
+ */
+function _resolveCartPhoto(p, color) {
+  if (!color) return p.photo;
+  try {
+    const variants = p.variants ? JSON.parse(p.variants) : [];
+    const match    = variants.find(v => v.name === color);
+    if (match && match.photo) return match.photo;
+  } catch (e) {}
+  return p.photo;
+}
+
+/**
+ * Add qty copies of a product/size/colour to the cart array and persist.
+ * Does NOT open the cart drawer — callers decide that themselves.
+ * @param {object} p - full product object
+ * @param {string|null} size
+ * @param {string|null} color
+ * @param {number} qty
+ */
+function _pushToCart(p, size, color, qty = 1) {
+  const existing = cart.find(c =>
+    c.id    === p.id &&
+    c.size  === size &&
+    c.color === color
+  );
+  if (existing) {
+    existing.qty = (existing.qty || 1) + qty;
+  } else {
+    cart.push({
+      id:    p.id,
+      name:  p.name,
+      price: p.price,
+      size:  size  || null,
+      color: color || null,
+      photo: _resolveCartPhoto(p, color),
+      qty,
+    });
+  }
+  saveCart();
+  updateCartBadge();
+  renderCartBody();
+}
+
 function addToCart(productId, size, color) {
   const p = products.find(x => x.id === productId);
   if (!p) return;
 
-  // Visual feedback on the triggering card button
-  const card = document.querySelector(`.product-card[data-id="${productId}"]`);
+  const card    = document.querySelector(`.product-card[data-id="${productId}"]`);
   const cartBtn = card?.querySelector('.card-cart-btn');
   if (cartBtn) {
     cartBtn.disabled = true;
@@ -193,35 +270,8 @@ function addToCart(productId, size, color) {
     }, 600);
   }
 
-  // Use the variant's photo if a color is selected, otherwise fall back to primary photo
-  let variantPhoto = p.photo;
-  if (color) {
-    try {
-      const variants = p.variants ? JSON.parse(p.variants) : [];
-      const match = variants.find(v => v.name === color);
-      if (match && match.photo) variantPhoto = match.photo;
-    } catch (e) {}
-  }
+  _pushToCart(p, size, color, 1);
 
-  const existing = cart.find(c => c.id === productId && c.size === size && c.color === color);
-  if (existing) {
-    existing.qty = (existing.qty || 1) + 1;
-  } else {
-    cart.push({
-      id: productId,
-      name: p.name,
-      price: p.price,
-      size: size || null,
-      color: color || null,
-      photo: variantPhoto,
-      qty: 1
-    });
-  }
-  saveCart();
-  updateCartBadge();
-  renderCartBody();
-
-  // Bump animation on cart button
   const navCartBtn = document.querySelector('.cart-btn');
   if (navCartBtn) {
     navCartBtn.classList.add('cart-bump');
@@ -235,16 +285,36 @@ function addToCart(productId, size, color) {
 }
 
 function removeFromCart(idx) {
-  cart.splice(idx, 1);
+  // idx is a render-time index; resolve to a stable key before mutating
+  // in case a re-render has shifted positions since the button was painted.
+  const item = cart[idx];
+  if (!item) return;
+  cart = cart.filter(c => c !== item);
   saveCart();
   updateCartBadge();
   renderCartBody();
 }
 
+/**
+ * Change quantity of a cart item by delta.
+ * At qty 1, decreasing removes the item after a brief confirmation flash
+ * on the button rather than silently clamping — consistent with standard
+ * cart behaviour.
+ */
 function changeCartQty(idx, delta) {
   const item = cart[idx];
   if (!item) return;
-  item.qty = Math.max(1, (item.qty || 1) + delta);
+
+  if (delta < 0 && (item.qty || 1) <= 1) {
+    // Already at minimum — remove the item by object reference
+    cart = cart.filter(c => c !== item);
+    saveCart();
+    updateCartBadge();
+    renderCartBody();
+    return;
+  }
+
+  item.qty = (item.qty || 1) + delta;
   saveCart();
   updateCartBadge();
   renderCartBody();
@@ -252,7 +322,7 @@ function changeCartQty(idx, delta) {
 
 // ─── RENDER CART BODY ─────────────────────────────────────────────────────
 function renderCartBody() {
-  const body = document.getElementById("cartBody");
+  const body   = document.getElementById("cartBody");
   const footer = document.getElementById("cartFooter");
   if (!body) return;
 
@@ -265,6 +335,8 @@ function renderCartBody() {
         </svg>
         <p>Your selection is empty.</p>
         <p style="font-size:0.75rem;">Tap <strong>Order</strong> on any piece to add it here.</p>
+        <button class="retry-btn" style="margin-top:0.75rem;"
+          onclick="closeCart();scrollToShop()">Browse collection →</button>
       </div>`;
     if (footer) footer.style.display = "none";
     return;
@@ -284,9 +356,13 @@ function renderCartBody() {
         <p class="cart-item-meta">
           ${[item.size, item.color].filter(Boolean).map(escapeHtml).join(' · ') || 'No size / colour selected'}
         </p>
-        <p class="cart-item-price">KSh ${Number(item.price).toLocaleString()}</p>
+        <p class="cart-item-price">${fmtPrice(item.price)}</p>
         <div class="cart-qty-row">
-          <button class="cart-qty-btn" onclick="changeCartQty(${i},-1)" aria-label="Decrease quantity">−</button>
+          <button class="cart-qty-btn${(item.qty || 1) <= 1 ? ' cart-qty-btn--remove' : ''}"
+            onclick="changeCartQty(${i},-1)"
+            aria-label="${(item.qty || 1) <= 1 ? 'Remove item' : 'Decrease quantity'}">
+            ${(item.qty || 1) <= 1 ? '✕' : '−'}
+          </button>
           <span class="cart-qty-val">${item.qty || 1}</span>
           <button class="cart-qty-btn" onclick="changeCartQty(${i},1)" aria-label="Increase quantity">+</button>
         </div>
@@ -322,15 +398,15 @@ let pendingOrderData = null;
 function checkoutCart() {
   if (cart.length === 0) return;
 
-  const subtotal = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
+  const subtotal    = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
   const deliveryFee = subtotal > 5000 ? 0 : 200;
-  const total = subtotal + deliveryFee;
+  const total       = subtotal + deliveryFee;
 
   const orderItems = cart.map(c => ({
-    name: c.name,
+    name:  c.name,
     price: c.price,
-    qty: c.qty || 1,
-    size: c.size,
+    qty:   c.qty || 1,
+    size:  c.size,
     color: c.color
   }));
 

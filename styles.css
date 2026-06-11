@@ -582,6 +582,19 @@ main { max-width: 1400px; margin: 0 auto; }
 
 .section-count { font-size: 0.7rem; color: var(--muted); font-weight: 400; margin-left: 0.5rem; }
 
+.section-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.delivery-address-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+  line-height: 1.5;
+}
+
 .sort-select {
   appearance: none;
   -webkit-appearance: none;
@@ -832,8 +845,8 @@ body.dark-mode .card-wishlist-btn { background: rgba(37,35,32,0.88); }
 
 .card-price-minimal {
   font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--primary);
   letter-spacing: 0.01em;
 }
 

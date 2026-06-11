@@ -1,6 +1,17 @@
 // ─── HELPER FUNCTIONS ─────────────────────────────────────────────────────
 
 /**
+ * Format a number as a KSh price string with two decimal places.
+ * e.g. 2500 → "KSh 2,500.00"
+ * @param {number|string} amount
+ * @returns {string}
+ */
+function fmtPrice(amount) {
+  return `KSh ${Number(amount).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+
+/**
  * Escape HTML special characters to prevent XSS when injecting into innerHTML.
  * @param {string} str
  * @returns {string}
@@ -158,17 +169,6 @@ function collapseSearch() {
     const wrapper = document.getElementById("desktopSearchWrapper");
     if (wrapper) wrapper.classList.remove("active");
   }, 150);
-}
-
-// ─── LOGO TAP EASTER EGG (admin unlock) ──────────────────────────────────
-function handleLogoTap() {
-  logoTapCount++;
-  clearTimeout(logoTapTimer);
-  logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1500);
-  if (logoTapCount >= 7) {
-    logoTapCount = 0;
-    openLoginModal();
-  }
 }
 
 // ─── WHATSAPP HELPER ──────────────────────────────────────────────────────

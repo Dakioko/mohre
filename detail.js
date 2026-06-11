@@ -1,18 +1,18 @@
 // ─── DETAIL PANEL STATE ───────────────────────────────────────────────────
-let detailProductId = null;
-let detailSelectedSize = null;
+let detailProductId    = null;
+let detailSelectedSize  = null;
 let detailSelectedColor = null;
-let detailQty = 1;
+let detailQty          = 1;
 
 // ─── OPEN DETAIL PANEL ────────────────────────────────────────────────────
 function openDetailPanel(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
 
-  detailProductId = id;
-  detailSelectedSize = null;
+  detailProductId    = id;
+  detailSelectedSize  = null;
   detailSelectedColor = null;
-  detailQty = 1;
+  detailQty          = 1;
 
   let variants = [];
   try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
@@ -23,14 +23,15 @@ function openDetailPanel(id) {
 
   // Build gallery image list
   const galleryPhotos = [];
-  // When variants exist, variant photos (incl. variant 0) represent the
-  // primary image's colour already — skip the standalone primary photo to
-  // avoid a visually-duplicate thumbnail with no colour association.
   if (p.photo && !hasVariants) galleryPhotos.push(p.photo);
-  try { if (p.photos) { const extras = JSON.parse(p.photos); extras.forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); }); } } catch (e) {}
+  try {
+    if (p.photos) {
+      const extras = JSON.parse(p.photos);
+      extras.forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); });
+    }
+  } catch (e) {}
   if (hasVariants) {
     variants.forEach(v => { if (v.photo && !galleryPhotos.includes(v.photo)) galleryPhotos.push(v.photo); });
-    // Fallback: if no variant has a photo, still show the primary photo
     if (!galleryPhotos.length && p.photo) galleryPhotos.push(p.photo);
   }
   if (!galleryPhotos.length) galleryPhotos.push(placeholder);
@@ -62,7 +63,7 @@ function openDetailPanel(id) {
     </div>`;
 
   // Sizes
-  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+  const sizes    = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
   const sizesHTML = sizes.length ? `
     <div class="detail-field">
       <div class="detail-field-label">
@@ -75,6 +76,9 @@ function openDetailPanel(id) {
             onclick="selectDetailSize(this,'${escapeHtml(s)}')">${escapeHtml(s)}</button>
         `).join('')}
       </div>
+      <p class="detail-size-error" id="detailSizeError" style="display:none;font-size:0.72rem;color:var(--danger);margin-top:0.4rem;">
+        Please select a size to continue.
+      </p>
     </div>` : '';
 
   // Colours
@@ -112,7 +116,7 @@ function openDetailPanel(id) {
         </div>
         <p class="detail-category-label">${escapeHtml(p.category)}</p>
         <h2 class="detail-name">${escapeHtml(p.name)}</h2>
-        <p class="detail-price">KSh ${Number(p.price).toLocaleString()}</p>
+        <p class="detail-price">${fmtPrice(p.price)}</p>
       </div>
 
       ${sizesHTML}
@@ -131,7 +135,6 @@ function openDetailPanel(id) {
       ${p.isSold ? `
         <p class="detail-sold-label">This item is no longer available.</p>
       ` : `
-        <!-- Action buttons -->
         <div class="detail-actions">
           <button class="detail-buynow-btn" onclick="detailOrder()">
             <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
@@ -230,6 +233,8 @@ function selectDetailSize(el, size) {
   document.querySelectorAll(".detail-size-chip").forEach(c => c.classList.remove("selected"));
   el.classList.add("selected");
   detailSelectedSize = size;
+  // Clear the error message as soon as a size is chosen
+  _hideSizeError();
 }
 
 function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
@@ -237,10 +242,9 @@ function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
   el.classList.add("selected");
   detailSelectedColor = colorName;
 
-  // Update color badge on main image
   const badgeDot  = document.getElementById("detailImgColorDot");
   const badgeText = document.getElementById("detailImgColorText");
-  const dot = el.querySelector(".detail-color-chip-dot");
+  const dot       = el.querySelector(".detail-color-chip-dot");
   if (badgeDot && dot)  badgeDot.style.background = dot.style.background;
   if (badgeText) badgeText.textContent = colorName;
 
@@ -258,41 +262,100 @@ function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
   swapVariant({ stopPropagation: () => {} }, productId, variantIdx, photoUrl, colorName);
 }
 
+// ─── SIZE VALIDATION HELPERS ──────────────────────────────────────────────
+
+/**
+ * Returns true if the product requires a size and one has been selected.
+ * Shows an inline error + shakes the chips if validation fails.
+ */
+function _validateSize() {
+  const p = products.find(x => x.id === detailProductId);
+  if (!p) return true;
+  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+  if (!sizes.length) return true; // no sizes defined — nothing to validate
+
+  if (detailSelectedSize) return true;
+
+  // Show error message
+  const errEl = document.getElementById("detailSizeError");
+  if (errEl) errEl.style.display = "block";
+
+  // Shake the size chips container
+  const sizesEl = document.getElementById("detailSizes");
+  if (sizesEl) {
+    sizesEl.classList.add("shake");
+    setTimeout(() => sizesEl.classList.remove("shake"), 500);
+  }
+
+  // Scroll the size field into view
+  errEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  return false;
+}
+
+function _hideSizeError() {
+  const errEl = document.getElementById("detailSizeError");
+  if (errEl) errEl.style.display = "none";
+}
+
 // ─── QUANTITY ─────────────────────────────────────────────────────────────
 function changeDetailQty(delta) {
   detailQty = Math.max(1, detailQty + delta);
-  const el = document.getElementById("detailQtyVal");
+  const el  = document.getElementById("detailQtyVal");
   if (el) el.textContent = detailQty;
 }
 
 // ─── ACCORDION ────────────────────────────────────────────────────────────
 function toggleAccordion(trigger) {
   const accordion = trigger.closest(".detail-accordion");
-  const isOpen = accordion.classList.contains("open");
-  // Close all
+  const isOpen    = accordion.classList.contains("open");
   document.querySelectorAll(".detail-accordion").forEach(a => a.classList.remove("open"));
   if (!isOpen) accordion.classList.add("open");
 }
 
 // ─── DETAIL PANEL ACTIONS ─────────────────────────────────────────────────
+
+/**
+ * Buy Now — send to WhatsApp.
+ * Validates size selection first.
+ */
 function detailOrder() {
   if (!detailProductId) return;
+  if (!_validateSize()) return;
   const p = products.find(x => x.id === detailProductId);
   if (!p) return;
   sendWhatsApp(p, detailSelectedSize, detailSelectedColor, detailQty);
 }
 
+/**
+ * Add to Cart.
+ * Validates size selection first.
+ * Adds detailQty copies in a single cart operation to avoid
+ * opening the cart drawer multiple times.
+ */
 function detailSaveToCart() {
   if (!detailProductId) return;
-  for (let i = 0; i < detailQty; i++) {
-    addToCart(detailProductId, detailSelectedSize, detailSelectedColor);
+  if (!_validateSize()) return;
+
+  const p = products.find(x => x.id === detailProductId);
+  if (!p) return;
+
+  _pushToCart(p, detailSelectedSize, detailSelectedColor, detailQty);
+
+  const navCartBtn = document.querySelector('.cart-btn');
+  if (navCartBtn) {
+    navCartBtn.classList.add('cart-bump');
+    setTimeout(() => navCartBtn.classList.remove('cart-bump'), 300);
   }
+
+  const itemCount = cart.reduce((s, c) => s + (c.qty || 1), 0);
+  announce(`${p.name} added to cart. ${itemCount} item${itemCount > 1 ? 's' : ''} in cart.`);
+  vibrateOnAction();
+  openCart();
 }
 
 function detailToggleWishlist() {
   if (!detailProductId) return;
   toggleWishlist(detailProductId);
-  // Update the button in detail panel
   const btn = document.getElementById("detailWishlistBtn");
   if (!btn) return;
   const inWishlist = isInWishlist(detailProductId);
@@ -311,7 +374,7 @@ function shareProduct() {
   if (!p) return;
   const url = window.location.href.split('?')[0] + `?product=${detailProductId}`;
   if (navigator.share) {
-    navigator.share({ title: p.name, text: `KSh ${Number(p.price).toLocaleString()} — ${p.name} on Mohre Hub`, url });
+    navigator.share({ title: p.name, text: `${fmtPrice(p.price)} — ${p.name} on Mohre Hub`, url });
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(url);
     showToast("Link copied to clipboard!");
@@ -327,7 +390,7 @@ function openLightbox(src) {
 
 function openLightboxWithGallery(images, startIndex = 0) {
   currentGalleryImages = images;
-  currentGalleryIndex = startIndex;
+  currentGalleryIndex  = startIndex;
   updateLightboxImage();
   document.getElementById("lightbox")?.classList.add("open");
   document.body.style.overflow = "hidden";

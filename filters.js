@@ -115,7 +115,6 @@ let priceFilterActive = false;
 let priceMinVal = 0;
 let priceMaxVal = Infinity;
 
-function initPriceSliders()   {}
-function updateFilterCounts() {}
-function clearPriceFilter()   {}
-function updatePriceRange()   {}
+function initPriceSliders() {}
+function clearPriceFilter()  {}
+function updatePriceRange()  {}
