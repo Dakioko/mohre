@@ -194,6 +194,17 @@ function openDetailPanel(id) {
             <p>Contact us within 48 hours of receiving your order via WhatsApp. Items must be unworn, unwashed, and in original condition with tags intact. Sale items and accessories are final sale. Refunds processed within 5–7 business days.</p>
           </div>
         </div>
+        <div class="detail-accordion">
+          <button class="detail-accordion-trigger" onclick="toggleAccordion(this)">
+            Authenticity Guarantee
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="detail-accordion-body">
+            <p>Every item is personally sourced and verified by our team before listing. If you have concerns, contact us within 48 hours via WhatsApp — full refund or replacement.</p>
+          </div>
+        </div>
       </div>
 
     </div><!-- /.detail-info-col -->`;

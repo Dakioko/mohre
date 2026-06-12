@@ -109,12 +109,3 @@ function applySavedFilters() {
     }
   } catch (e) {}
 }
-
-// ─── PRICE FILTER (disabled) ──────────────────────────────────────────────
-let priceFilterActive = false;
-let priceMinVal = 0;
-let priceMaxVal = Infinity;
-
-function initPriceSliders() {}
-function clearPriceFilter()  {}
-function updatePriceRange()  {}

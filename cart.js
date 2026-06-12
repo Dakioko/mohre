@@ -46,6 +46,8 @@ function renderWishlistBody() {
         </svg>
         <p>Your wishlist is empty.</p>
         <p style="font-size:0.75rem;">Tap the heart on any piece to save it here.</p>
+        <button class="retry-btn" style="margin-top:0.75rem;"
+          onclick="closeWishlist();scrollToShop()">Browse collection →</button>
       </div>`;
     return;
   }

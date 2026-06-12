@@ -1,7 +1,7 @@
 // ─── CONFIG ───────────────────────────────────────────────────────────────
 const CONFIG = {
   WA_NUMBER: "254717545221",
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwMtkLzhMcFhkoClWDcBhAIr-MPIFLAqj5q47XMHbQ_5Cr0g8Hv_E8nLVpaOSZ-3bSF/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxNPu4-mF6DBhZEaBmM_Y4bSRcVMlvAs3zBBxteZkt61etWcfBuaNAppjgUxkKaGsQ1/exec",
   // Number of times apiGet will retry before giving up.
   API_RETRIES: 3,
 };
@@ -19,11 +19,6 @@ const SIZE_GUIDE_DATA = [
   { label: "XL",  uk: "14",  eu: "42", chest: "102–106", waist: "82–86"  },
   { label: "XXL", uk: "16",  eu: "44", chest: "107–112", waist: "87–92"  },
 ];
-
-// ─── ADMIN ────────────────────────────────────────────────────────────────
-// NOTE: Move admin authentication to the server side.
-// The secret key should never live here in production.
-let ADMIN_SECRET_KEY = "";
 
 // ─── GLOBAL STATE ─────────────────────────────────────────────────────────
 let products = [];

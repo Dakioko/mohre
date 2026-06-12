@@ -517,9 +517,15 @@ function initAdminTrigger() {
   logoBtn.addEventListener("click", () => {
     logoTapCount++;
     clearTimeout(logoTapTimer);
-    logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1200);
+    logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1800);
 
-    if (logoTapCount >= 3) {
+    // Subtle pulse feedback so the user knows taps are being counted
+    logoBtn.classList.remove("logo-tap-pulse");
+    // restart animation even if triggered again before it finishes
+    void logoBtn.offsetWidth;
+    logoBtn.classList.add("logo-tap-pulse");
+
+    if (logoTapCount >= 5) {
       logoTapCount = 0;
       if (document.body.classList.contains("is-admin")) {
         _deactivateAdminUI();
@@ -595,7 +601,6 @@ function _activateAdminUI() {
 
 function _deactivateAdminUI() {
   clearAdminSession();
-  ADMIN_SECRET_KEY = ""; // keep legacy var neutral
   document.body.classList.remove("is-admin");
   const addBtn = document.getElementById("addItemBtn");
   if (addBtn) addBtn.style.display = "none";

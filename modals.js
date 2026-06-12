@@ -35,52 +35,12 @@ function openSizeModal(id) {
   document.getElementById("sizeModal")?.classList.add("open");
 }
 
-/** Open size modal with "Add to bag" flow instead of WhatsApp */
-function openSizeModalForCart(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-
-  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
-
-  // No sizes defined — add directly to cart without showing the modal
-  if (!sizes.length) {
-    const card = document.querySelector(`.product-card[data-id="${id}"]`);
-    const activeColor = card?.querySelector('.card-swatch.active');
-    const colorName = activeColor ? activeColor.getAttribute('data-color') : null;
-    addToCart(id, null, colorName);
-    return;
-  }
-
-  pendingOrderId = id;
-  selectedSize = null;
-
-  const nameEl = document.getElementById("sizeModalName");
-  const priceEl = document.getElementById("sizeModalPrice");
-  if (nameEl) nameEl.textContent = p.name;
-  if (priceEl) priceEl.textContent = fmtPrice(p.price);
-
-  const chipsEl = document.getElementById("sizeModalChips");
-  if (chipsEl) {
-    chipsEl.innerHTML = sizes.map(s =>
-      `<button class="size-modal-chip"
-        onclick="selectModalSize(this,'${escapeHtml(s)}')">${escapeHtml(s)}</button>`
-    ).join("");
-  }
-
-  // Confirm button → Add to cart flow
-  const confirmBtn = document.getElementById("sizeModalConfirmBtn");
-  if (confirmBtn) {
-    confirmBtn.textContent = "Add to bag →";
-    confirmBtn.onclick = confirmSizeAddToCart;
-  }
-
-  document.getElementById("sizeModal")?.classList.add("open");
-}
-
 function selectModalSize(el, size) {
   document.querySelectorAll(".size-modal-chip").forEach(c => c.classList.remove("selected"));
   el.classList.add("selected");
   selectedSize = size;
+  const errEl = document.getElementById("sizeModalError");
+  if (errEl) errEl.style.display = "none";
 }
 
 function closeSizeModal(e) {
@@ -89,31 +49,44 @@ function closeSizeModal(e) {
     document.getElementById("sizeModal")?.classList.remove("open");
     pendingOrderId = null;
     selectedSize = null;
+    const errEl = document.getElementById("sizeModalError");
+    if (errEl) errEl.style.display = "none";
   }
 }
 
+/**
+ * Validate that a size has been selected when the product has sizes defined.
+ * Mirrors _validateSize in detail.js but scoped to the size modal.
+ * @returns {boolean} true if valid (or no size required), false otherwise
+ */
+function _validateModalSize() {
+  const p = products.find(x => x.id === pendingOrderId);
+  if (!p) return true;
+  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+  if (!sizes.length) return true; // no sizes defined — nothing to validate
+  if (selectedSize) return true;
+
+  const errEl = document.getElementById("sizeModalError");
+  if (errEl) {
+    errEl.style.display = "block";
+    errEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  const chipsEl = document.getElementById("sizeModalChips");
+  if (chipsEl) {
+    chipsEl.classList.add("shake");
+    setTimeout(() => chipsEl.classList.remove("shake"), 500);
+  }
+
+  return false;
+}
+
 function confirmOrder() {
+  if (!_validateModalSize()) return;
   const p = products.find(x => x.id === pendingOrderId);
   if (!p) return;
   closeSizeModal("");
   sendWhatsApp(p, selectedSize);
-}
-
-function confirmSizeAddToCart() {
-  const p = products.find(x => x.id === pendingOrderId);
-  if (!p) return;
-  const card = document.querySelector(`.product-card[data-id="${pendingOrderId}"]`);
-  const activeColor = card?.querySelector('.card-swatch.active');
-  const colorName = activeColor ? activeColor.getAttribute('data-color') : null;
-  closeSizeModal("");
-  addToCart(pendingOrderId, selectedSize, colorName);
-
-  // Restore confirm button for WhatsApp flow
-  const confirmBtn = document.getElementById("sizeModalConfirmBtn");
-  if (confirmBtn) {
-    confirmBtn.textContent = "Order via WhatsApp →";
-    confirmBtn.onclick = confirmOrder;
-  }
 }
 
 // ─── DIRECT ORDER (no sizes) ──────────────────────────────────────────────
