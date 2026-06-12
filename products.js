@@ -1,7 +1,29 @@
 // ─── FILTER LOGIC ─────────────────────────────────────────────────────────
 
-// Slideshow timer registry — declared here so swapVariant can access it
-const _slideshowTimers = new Map();
+/**
+ * Build the ordered list of images for a product card: main photo,
+ * extra photos, then any variant photos not already included.
+ * Used by both the arrow navigation and swatch reset logic.
+ * @param {object} p - product
+ * @returns {string[]}
+ */
+function _cardImageList(p) {
+  const images = [];
+  if (p.photo) images.push(p.photo);
+  try {
+    if (p.photos) {
+      const extras = JSON.parse(p.photos);
+      extras.forEach(src => { if (src && !images.includes(src)) images.push(src); });
+    }
+  } catch (e) {}
+  try {
+    if (p.variants) {
+      const variants = JSON.parse(p.variants);
+      variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
+    }
+  } catch (e) {}
+  return images;
+}
 
 /**
  * Returns true if a product was created within NEW_ARRIVAL_DAYS days.
@@ -85,8 +107,6 @@ function renderProducts() {
   if (countEl) countEl.textContent = `${filtered.length} piece${filtered.length !== 1 ? "s" : ""}`;
 
   if (filtered.length === 0) {
-    _slideshowTimers.forEach(timerId => clearInterval(timerId));
-    _slideshowTimers.clear();
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">
@@ -116,16 +136,14 @@ function renderProducts() {
     return;
   }
 
-  // Full rebuild
-  _slideshowTimers.forEach(timerId => clearInterval(timerId));
-  _slideshowTimers.clear();
-
   grid.innerHTML = filtered.map((p, i) => {
     let variants = [];
     try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
     const hasVariants = variants.length > 0;
     const inWishlist  = isInWishlist(p.id);
     const showNewBadge = isNewArrival(p);
+    const images = _cardImageList(p);
+    const hasMultipleImages = images.length > 1;
 
     const swatchesHTML = hasVariants ? `
       <div class="card-swatches">
@@ -138,6 +156,21 @@ function renderProducts() {
           </span>`).join('')}
       </div>` : '';
 
+    const navArrowsHTML = hasMultipleImages ? `
+      <button class="card-nav-arrow card-nav-prev" aria-label="Previous photo"
+        onclick="event.stopPropagation();cycleCardImage(${p.id},-1)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <button class="card-nav-arrow card-nav-next" aria-label="Next photo"
+        onclick="event.stopPropagation();cycleCardImage(${p.id},1)">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+      <span class="card-img-counter" id="imgCounter${p.id}">1/${images.length}</span>` : '';
+
     return `
       <article class="product-card${p.isSold ? ' sold-out' : ''}"
         data-id="${p.id}"
@@ -146,7 +179,7 @@ function renderProducts() {
         role="button"
         tabindex="0"
         aria-label="${escapeHtml(p.name)}, ${fmtPrice(p.price)}${p.isSold ? ', sold out' : ''}">
-        <div class="card-img-wrap" id="imgWrap${p.id}">
+        <div class="card-img-wrap" id="imgWrap${p.id}" data-img-idx="0">
           <div class="card-img-placeholder">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
@@ -173,6 +206,7 @@ function renderProducts() {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
             </svg>
           </button>
+          ${navArrowsHTML}
           <div class="card-quick-view" onclick="event.stopPropagation();openDetailPanel(${p.id})">
             Shop Now
           </div>
@@ -187,8 +221,6 @@ function renderProducts() {
 
   const isAdmin = document.body.classList.contains("is-admin");
   if (isAdmin) addAdminControls();
-
-  initCardSlideshows();
 }
 
 /**
@@ -229,10 +261,6 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
   const card = document.querySelector(`.product-card[data-id="${productId}"]`);
   if (!card) return;
 
-  card._swatchSwapped = true;
-  clearInterval(_slideshowTimers.get(productId));
-  _slideshowTimers.delete(productId);
-
   card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === variantIdx));
 
   if (photoUrl) {
@@ -243,67 +271,64 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
       img.src    = photoUrl;
       img.onload = () => imgWrap?.classList.add('img-loaded');
     }
+    // Reset arrow navigation to point at this variant's photo as the
+    // current position, so prev/next continues from here.
+    if (imgWrap) {
+      const p = products.find(x => x.id === productId);
+      if (p) {
+        const images = _cardImageList(p);
+        const idx = images.indexOf(photoUrl);
+        imgWrap.dataset.imgIdx = idx > -1 ? idx : 0;
+        const counter = document.getElementById(`imgCounter${productId}`);
+        if (counter) counter.textContent = `${(idx > -1 ? idx : 0) + 1}/${images.length}`;
+      }
+    }
   }
 }
 
-// ─── CARD CROSSFADE SLIDESHOW ─────────────────────────────────────────────
-function initCardSlideshows() {
-  _slideshowTimers.forEach(timerId => clearInterval(timerId));
-  _slideshowTimers.clear();
+// ─── CARD IMAGE NAVIGATION (manual arrows) ────────────────────────────────
+/**
+ * Step the card's main image forward/back through its image list.
+ * @param {number} productId
+ * @param {number} dir - +1 for next, -1 for previous
+ */
+function cycleCardImage(productId, dir) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
 
-  products.filter(p => !p.isSold).forEach(p => {
-    const images = [];
-    if (p.photo) images.push(p.photo);
-    try {
-      if (p.photos) {
-        const extras = JSON.parse(p.photos);
-        extras.forEach(src => { if (src && src !== p.photo) images.push(src); });
+  const images = _cardImageList(p);
+  if (images.length < 2) return;
+
+  const card   = document.querySelector(`.product-card[data-id="${productId}"]`);
+  const imgWrap = card?.querySelector('.card-img-wrap');
+  const img     = document.getElementById(`img${productId}`);
+  if (!imgWrap || !img) return;
+
+  let idx = parseInt(imgWrap.dataset.imgIdx || '0', 10);
+  idx = (idx + dir + images.length) % images.length;
+  imgWrap.dataset.imgIdx = idx;
+
+  imgWrap.classList.remove('img-loaded');
+  img.style.transition = 'opacity 0.25s ease';
+  img.style.opacity = '0';
+  setTimeout(() => {
+    img.src = images[idx];
+    img.onload = () => { img.style.opacity = '1'; imgWrap.classList.add('img-loaded'); };
+  }, 150);
+
+  // Keep swatch state in sync if this image belongs to a variant
+  try {
+    if (p.variants) {
+      const variants = JSON.parse(p.variants);
+      const vi = variants.findIndex(v => v.photo === images[idx]);
+      if (vi > -1) {
+        card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === vi));
       }
-    } catch (e) {}
-    try {
-      if (p.variants) {
-        const variants = JSON.parse(p.variants);
-        variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
-      }
-    } catch (e) {}
-
-    if (images.length < 2) return;
-
-    const imgEl = document.getElementById(`img${p.id}`);
-    if (!imgEl) return;
-
-    let idx = 0;
-    const timerId = setInterval(() => {
-      const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
-      if (!card || card._swatchSwapped) return;
-
-      idx = (idx + 1) % images.length;
-      const img = document.getElementById(`img${p.id}`);
-      if (!img) return;
-
-      img.style.transition = 'opacity 0.6s ease';
-      img.style.opacity    = '0';
-      setTimeout(() => {
-        img.src    = images[idx];
-        img.onload = () => { img.style.opacity = '1'; };
-        setTimeout(() => { img.style.opacity = '1'; }, 100);
-      }, 600);
-    }, 3500);
-
-    _slideshowTimers.set(p.id, timerId);
-
-    const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
-    if (card) {
-      card.addEventListener('mouseenter', () => {
-        clearInterval(_slideshowTimers.get(p.id));
-        _slideshowTimers.delete(p.id);
-      }, { once: true });
-      card.addEventListener('touchstart', () => {
-        clearInterval(_slideshowTimers.get(p.id));
-        _slideshowTimers.delete(p.id);
-      }, { passive: true, once: true });
     }
-  });
+  } catch (e) {}
+
+  const counter = document.getElementById(`imgCounter${productId}`);
+  if (counter) counter.textContent = `${idx + 1}/${images.length}`;
 }
 
 // ─── HERO GALLERY ─────────────────────────────────────────────────────────
