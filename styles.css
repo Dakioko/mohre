@@ -14,7 +14,7 @@
   --success:       #218c74;
   --font-display:  'Cormorant Garamond', serif;
   --font-body:     'DM Sans', sans-serif;
-  --font-product:  'Jost', sans-serif;
+  --font-product:  'DM Sans', sans-serif;
   --nav-h:         60px;
   --filter-h:      50px;
   --shimmer-from:  #eae8e4;
@@ -923,7 +923,7 @@ body.dark-mode .card-nav-arrow:hover { background: rgba(30,30,30,0.9); }
 
 .card-price-minimal {
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary);
   letter-spacing: 0.01em;
 }

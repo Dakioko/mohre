@@ -9,7 +9,16 @@
  */
 function _cardImageList(p) {
   const images = [];
-  if (p.photo) images.push(p.photo);
+  // Use primary photo if set; otherwise fall back to the first variant photo
+  // so products with colour variants don't need a redundant duplicate image.
+  if (p.photo) {
+    images.push(p.photo);
+  } else {
+    try {
+      const variants = p.variants ? JSON.parse(p.variants) : [];
+      if (variants.length && variants[0].photo) images.push(variants[0].photo);
+    } catch (e) {}
+  }
   try {
     if (p.photos) {
       const extras = JSON.parse(p.photos);

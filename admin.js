@@ -85,6 +85,7 @@ function resetAdminForm() {
   renderExtraPhotos();
   colorVariants = [];
   renderColorVariants();
+  _updatePrimaryImageHint();
   onCategoryChange("Women");
 }
 
@@ -98,14 +99,28 @@ function onCategoryChange(cat) {
 }
 
 // ─── COLOUR VARIANTS ──────────────────────────────────────────────────────
+function _updatePrimaryImageHint() {
+  const hint = document.getElementById("primaryImageHint");
+  if (!hint) return;
+  if (colorVariants.length > 0) {
+    hint.textContent = "Optional — first colour photo will be used if left empty";
+    hint.style.color = "var(--accent)";
+  } else {
+    hint.textContent = "Optional if colour variants are added";
+    hint.style.color = "var(--muted)";
+  }
+}
+
 function addColorVariant() {
   colorVariants.push({ name: "", color: "#8c7e6c", photo: "" });
   renderColorVariants();
+  _updatePrimaryImageHint();
 }
 
 function removeColorVariant(idx) {
   colorVariants.splice(idx, 1);
   renderColorVariants();
+  _updatePrimaryImageHint();
 }
 
 async function handleVariantImageFile(input, idx) {
@@ -367,6 +382,7 @@ function openEditPanel(id) {
   colorVariants = [];
   try { if (p.variants) colorVariants = JSON.parse(p.variants); } catch (e) {}
   renderColorVariants();
+  _updatePrimaryImageHint();
 
   // Extra photos
   extraPhotos = [];
