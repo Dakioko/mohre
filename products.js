@@ -147,23 +147,6 @@ function renderProducts(forceRebuild = false) {
     const images = _cardImageList(p);
     const hasMultipleImages = images.length > 1;
 
-    const swatchesHTML = hasVariants ? `
-      <div class="card-swatches">
-        ${variants.slice(0, 5).map((v, vi) => `
-          <span class="card-swatch ${vi === 0 ? 'active' : ''}"
-            style="background:${v.color || '#ccc'}"
-            title="${escapeHtml(v.name || '')}"
-            role="button"
-            tabindex="0"
-            aria-label="${escapeHtml(v.name || 'Colour option')}"
-            aria-pressed="${vi === 0 ? 'true' : 'false'}"
-            data-product-id="${p.id}"
-            data-variant-idx="${vi}"
-            data-photo="${escapeHtml(v.photo || p.photo || '')}"
-            data-color="${escapeHtml(v.name || '')}">
-          </span>`).join('')}
-      </div>` : '';
-
     const navArrowsHTML = hasMultipleImages ? `
       <button class="card-nav-arrow card-nav-prev" aria-label="Previous photo"
         onclick="event.stopPropagation();cycleCardImage(${p.id},-1)">
@@ -225,7 +208,6 @@ function renderProducts(forceRebuild = false) {
         </div>
         <div class="card-meta-minimal">
           <h3 class="card-title-minimal">${escapeHtml(p.name)}</h3>
-          ${swatchesHTML}
           <p class="card-price-minimal">${fmtPrice(p.price)}</p>
         </div>
       </article>`;
@@ -390,8 +372,7 @@ async function loadProducts() {
   showSkeletons(6);
   try {
     products = await apiGet();
-    setTimeout(reconcileCart, 0);
-    if (typeof initHeroCarousel === 'function') initHeroCarousel(products);
+    setTimeout(reconcileCart, 0); // defer so UI renders before toast fires
     renderProducts();
     checkProductParam();
     applySavedFilters();
