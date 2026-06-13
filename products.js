@@ -390,7 +390,8 @@ async function loadProducts() {
   showSkeletons(6);
   try {
     products = await apiGet();
-    setTimeout(reconcileCart, 0); // defer so UI renders before toast fires
+    setTimeout(reconcileCart, 0);
+    if (typeof initHeroCarousel === 'function') initHeroCarousel(products);
     renderProducts();
     checkProductParam();
     applySavedFilters();

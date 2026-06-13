@@ -15,7 +15,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* ─── NEW HERO ─────────────────────────────────────────────────────── */
+    /* ─── HERO ──────────────────────────────────────────────────────────── */
     .hero-split {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
@@ -78,7 +78,6 @@
       background-color: #1a1a1a;
       color: #fff;
       padding: 16px 35px;
-      text-decoration: none;
       font-family: 'Montserrat', sans-serif;
       font-size: 0.80rem;
       text-transform: uppercase;
@@ -86,53 +85,26 @@
       font-weight: 500;
       border: 1px solid #1a1a1a;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      z-index: 1;
-      transition: color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: background-color 0.4s, color 0.4s;
     }
 
-    .hero-split .btn-hero-primary::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: #fcfbfa;
-      transform: translateY(100%);
-      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-      z-index: -1;
+    .hero-split .btn-hero-primary:hover {
+      background-color: transparent;
+      color: #1a1a1a;
     }
-
-    .hero-split .btn-hero-primary:hover { color: #1a1a1a; }
-    .hero-split .btn-hero-primary:hover::before { transform: translateY(0); }
 
     .hero-split .btn-hero-secondary {
       color: #1a1a1a;
-      text-decoration: none;
       font-family: 'Montserrat', sans-serif;
       font-size: 0.80rem;
       text-transform: uppercase;
       letter-spacing: 2px;
       font-weight: 500;
-      position: relative;
-      padding: 5px 0;
       background: none;
       border: none;
       cursor: pointer;
+      padding: 5px 0;
     }
-
-    .hero-split .btn-hero-secondary::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0;
-      width: 100%; height: 1px;
-      background-color: #1a1a1a;
-      transform: scaleX(0.2);
-      transform-origin: left;
-      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    }
-
-    .hero-split .btn-hero-secondary:hover::after { transform: scaleX(1); }
 
     .hero-split .social-proof {
       display: flex;
@@ -141,12 +113,11 @@
       font-family: 'Montserrat', sans-serif;
       font-size: 0.75rem;
       color: #767676;
-      letter-spacing: 0.5px;
     }
 
     .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
 
-    /* Right carousel panel */
+    /* Carousel panel */
     .hero-carousel-container {
       position: relative;
       background-color: #e5e5e5;
@@ -154,9 +125,7 @@
     }
 
     .hero-carousel-container .slide-wrapper {
-      width: 100%;
-      height: 100%;
-      position: relative;
+      width: 100%; height: 100%; position: relative;
     }
 
     .hero-carousel-container .slide-img {
@@ -167,113 +136,168 @@
       object-position: center top;
       opacity: 0;
       transform: scale(1.04);
-      transition: opacity 0.9s ease-in-out, transform 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: opacity 0.9s ease-in-out, transform 1.4s cubic-bezier(0.25,1,0.5,1);
       z-index: 1;
     }
 
     .hero-carousel-container .slide-img.active {
-      opacity: 1;
-      transform: scale(1);
-      z-index: 2;
+      opacity: 1; transform: scale(1); z-index: 2;
     }
 
     .hero-carousel-container .carousel-indicators {
       position: absolute;
-      bottom: 30px;
-      left: 40px;
-      display: flex;
-      gap: 10px;
-      z-index: 5;
+      bottom: 30px; left: 40px;
+      display: flex; gap: 10px; z-index: 5;
     }
 
     .hero-carousel-container .indicator-dash {
-      width: 40px;
-      height: 2px;
+      width: 40px; height: 2px;
       background-color: rgba(255,255,255,0.35);
       cursor: pointer;
       transition: background-color 0.3s;
     }
 
     .hero-carousel-container .indicator-dash.active {
-      background-color: rgba(255,255,255,1);
+      background-color: #fff;
     }
 
     .hero-carousel-container .promo-badge {
       position: absolute;
-      bottom: 30px;
-      right: 40px;
+      bottom: 30px; right: 40px;
       background-color: #fcfbfa;
       border-radius: 50%;
-      width: 85px;
-      height: 85px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      width: 85px; height: 85px;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
       box-shadow: 0 15px 35px rgba(0,0,0,0.04);
-      text-align: center;
       z-index: 5;
     }
 
     .hero-carousel-container .promo-badge .percentage {
       font-family: 'Playfair Display', serif;
-      font-size: 1.35rem;
-      font-weight: 500;
-      color: #1a1a1a;
-      line-height: 1;
+      font-size: 1.35rem; color: #1a1a1a; line-height: 1;
     }
 
     .hero-carousel-container .promo-badge .text {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.55rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #767676;
-      margin-top: 3px;
-      font-weight: 500;
+      font-size: 0.55rem; text-transform: uppercase;
+      letter-spacing: 1px; color: #767676; margin-top: 3px;
     }
 
-    /* Responsive */
+    /* ─── FILTER BAR: refined underline style ───────────────────────────── */
+    @media (min-width: 769px) {
+      .filter-bar-wrapper {
+        border-bottom: 1px solid rgba(224, 222, 218, 0.6);
+        background: #fcfbfa;
+      }
+
+      .filter-bar {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        padding: 0 8%;
+      }
+
+      .filter-btn {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1.8px;
+        color: #767676;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 16px 22px;
+        cursor: pointer;
+        transition: color 0.25s, border-color 0.25s;
+        white-space: nowrap;
+      }
+
+      .filter-btn:hover {
+        color: #1a1a1a;
+      }
+
+      .filter-btn.active {
+        color: #1a1a1a;
+        border-bottom-color: #1a1a1a;
+      }
+    }
+
+    /* ─── RESPONSIVE HERO ───────────────────────────────────────────────── */
     @media (max-width: 1024px) {
       .hero-split h1 { font-size: 2.3rem; }
+      .nav-category-links { display: none; }
     }
 
     @media (max-width: 768px) {
       .hero-split {
         grid-template-columns: 1fr;
-        height: auto;
-        min-height: auto;
+        height: calc(100vh - 120px);
+        min-height: 560px;
+      }
+
+      /* Image on top on mobile */
+      .hero-carousel-container {
+        grid-row: 1;
+        height: 40vh;
+        min-height: 240px;
       }
 
       .hero-split .hero-content {
-        padding: 60px 6% 50px 6%;
+        grid-row: 2;
+        padding: 30px 6%;
         text-align: center;
         align-items: center;
+        background-color: #fcfbfa;
+        justify-content: flex-start;
       }
 
-      .hero-split h1 { font-size: 2.1rem; }
+      .hero-split .tagline { font-size: 0.65rem; margin-bottom: 8px; }
+      .hero-split h1 { font-size: 1.8rem; }
+
+      .hero-split .hero-description {
+        font-size: 0.85rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
 
       .hero-split .cta-group {
-        flex-direction: column;
-        gap: 15px;
+        flex-direction: row;
+        gap: 12px;
         width: 100%;
-        margin-bottom: 25px;
+        margin-bottom: 0;
+        justify-content: center;
       }
 
-      .hero-split .btn-hero-primary {
-        width: 100%;
+      .hero-split .btn-hero-primary,
+      .hero-split .btn-hero-secondary {
+        flex: 1;
         text-align: center;
-        padding: 16px 20px;
+        padding: 12px 10px;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
       }
 
-      .hero-split .social-proof { justify-content: center; }
-      .hero-carousel-container { height: 460px; }
-      .hero-carousel-container .carousel-indicators {
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 25px;
+      .hero-split .btn-hero-secondary {
+        border: 1px solid #1a1a1a;
       }
-      .hero-carousel-container .promo-badge { right: 25px; bottom: 25px; }
+
+      .hero-split .social-proof { display: none; }
+      .hero-split .cta-group { display: none; }
+
+      .hero-carousel-container .carousel-indicators {
+        left: 50%; transform: translateX(-50%); bottom: 15px; gap: 6px;
+      }
+      .hero-carousel-container .indicator-dash { width: 25px; }
+      .hero-carousel-container .promo-badge {
+        width: 65px; height: 65px; right: 15px; bottom: 15px;
+      }
+      .hero-carousel-container .promo-badge .percentage { font-size: 1.1rem; }
+      .hero-carousel-container .promo-badge .text { font-size: 0.45rem; }
     }
   </style>
 </head>
@@ -369,8 +393,7 @@
       Discover curated minimalist essentials crafted from sustainably sourced premium linens and organic cottons. Built to last seasons.
     </p>
     <div class="cta-group">
-      <button class="btn-hero-primary" onclick="resetViewToShop()">Shop New Arrivals</button>
-      <button class="btn-hero-secondary" onclick="goToCategory('New')">Explore New In</button>
+      <button class="btn-hero-primary" onclick="goToCategory('New')">Shop New Arrivals</button>
     </div>
     <div class="social-proof">
       <span class="stars">★★★★★</span>
@@ -380,20 +403,8 @@
 
   <!-- Right Column: Carousel -->
   <section class="hero-carousel-container">
-    <div class="slide-wrapper">
-      <img class="slide-img active" src="https://res.cloudinary.com/dgvpgo3bw/image/upload/v1781216339/w6pna7b0guiqp9en06kz.jpg" alt="Editorial linen dress">
-      <img class="slide-img" src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=80" alt="Modern tailored apparel">
-      <img class="slide-img" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80" alt="Premium earth-toned linen">
-    </div>
-    <div class="carousel-indicators">
-      <div class="indicator-dash active" onclick="jumpToSlide(0)"></div>
-      <div class="indicator-dash" onclick="jumpToSlide(1)"></div>
-      <div class="indicator-dash" onclick="jumpToSlide(2)"></div>
-    </div>
-    <div class="promo-badge">
-      <span class="percentage">20%</span>
-      <span class="text">Off Order</span>
-    </div>
+    <div class="slide-wrapper" id="heroSlideWrapper"></div>
+    <div class="carousel-indicators" id="heroIndicators"></div>
   </section>
 
 </main>
@@ -402,13 +413,12 @@
 <!-- ─── CATEGORY FILTER BAR ──────────────────────────────────────────── -->
 <div class="filter-bar-wrapper" id="categoryBarWrapper">
   <div class="filter-bar" id="filterBar" role="tablist" aria-label="Filter by category">
-    <button type="button" class="filter-btn active" data-category="All"         role="tab" aria-selected="true">All</button>
-    <button type="button" class="filter-btn"         data-category="New"        role="tab">New In</button>
-    <button type="button" class="filter-btn"         data-category="Women"      role="tab">Women</button>
-    <button type="button" class="filter-btn"         data-category="Men"        role="tab">Men</button>
-    <button type="button" class="filter-btn"         data-category="Unisex"     role="tab">Unisex</button>
-    <button type="button" class="filter-btn"         data-category="Shoes"      role="tab">Shoes</button>
-    <button type="button" class="filter-btn"         data-category="Accessories"role="tab">Accessories</button>
+    <button type="button" class="filter-btn active" data-category="All"          role="tab" aria-selected="true">All</button>
+    <button type="button" class="filter-btn"         data-category="New"         role="tab">New In</button>
+    <button type="button" class="filter-btn"         data-category="Women"       role="tab">Women</button>
+    <button type="button" class="filter-btn"         data-category="Men"         role="tab">Men</button>
+    <button type="button" class="filter-btn"         data-category="Shoes"       role="tab">Shoes</button>
+    <button type="button" class="filter-btn"         data-category="Accessories" role="tab">Accessories</button>
   </div>
 </div>
 
@@ -812,21 +822,21 @@
 <!-- ─── HERO CAROUSEL ────────────────────────────────────────────────── -->
 <script>
   (function () {
-    const slides     = document.querySelectorAll('.hero-carousel-container .slide-img');
-    const indicators = document.querySelectorAll('.hero-carousel-container .indicator-dash');
-    if (!slides.length) return;
-
     let currentIndex  = 0;
-    let slideInterval = setInterval(nextHeroSlide, 7000);
+    let slideInterval = null;
 
     function updateHeroSlider(index) {
+      const slides     = document.querySelectorAll('.hero-carousel-container .slide-img');
+      const indicators = document.querySelectorAll('.hero-carousel-container .indicator-dash');
       slides.forEach(s => s.classList.remove('active'));
       indicators.forEach(i => i.classList.remove('active'));
-      slides[index].classList.add('active');
-      indicators[index].classList.add('active');
+      if (slides[index]) slides[index].classList.add('active');
+      if (indicators[index]) indicators[index].classList.add('active');
     }
 
     function nextHeroSlide() {
+      const slides = document.querySelectorAll('.hero-carousel-container .slide-img');
+      if (!slides.length) return;
       currentIndex = (currentIndex + 1) % slides.length;
       updateHeroSlider(currentIndex);
     }
@@ -836,6 +846,48 @@
       updateHeroSlider(currentIndex);
       clearInterval(slideInterval);
       slideInterval = setInterval(nextHeroSlide, 7000);
+    };
+
+    /**
+     * Called from products.js after products are loaded.
+     * Picks up to 3 products with photos and builds the carousel.
+     */
+    window.initHeroCarousel = function (products) {
+      const pool = products
+        .filter(p => !p.isSold && p.photo)
+        .slice(0, 3);
+
+      const wrapper    = document.getElementById('heroSlideWrapper');
+      const indicators = document.getElementById('heroIndicators');
+      if (!wrapper || !indicators || !pool.length) return;
+
+      wrapper.innerHTML = pool.map((p, i) => `
+        <img class="slide-img${i === 0 ? ' active' : ''}"
+          src="${p.photo}"
+          alt="${p.name}"
+          onerror="this.style.display='none'">`
+      ).join('');
+
+      indicators.innerHTML = pool.map((_, i) => `
+        <div class="indicator-dash${i === 0 ? ' active' : ''}"
+          onclick="jumpToSlide(${i})"></div>`
+      ).join('');
+
+      currentIndex = 0;
+      clearInterval(slideInterval);
+      if (pool.length > 1) {
+        slideInterval = setInterval(nextHeroSlide, 7000);
+
+        // Swipe on mobile
+        let startX = 0;
+        wrapper.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX;
+        }, { passive: true });
+        wrapper.addEventListener('touchend', e => {
+          const dx = e.changedTouches[0].clientX - startX;
+          if (Math.abs(dx) > 50) jumpToSlide((currentIndex + (dx < 0 ? 1 : -1) + pool.length) % pool.length);
+        }, { passive: true });
+      }
     };
   })();
 </script>
