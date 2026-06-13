@@ -99,13 +99,14 @@
   <div class="hero-text">
     <h1>Shop Easily.<br>Dress <span>Smarter</span>.</h1>
     <p>Hand-selected premium wardrobe essentials. Order effortlessly in one tap — delivered across Kenya.</p>
-    <button type="button" class="hero-btn" onclick="scrollToShop()">Explore Collection</button>
+    <button type="button" class="hero-btn hero-btn--desktop" onclick="scrollToShop()">Explore Collection</button>
   </div>
-  <div class="hero-gallery" id="heroGallery" aria-hidden="true">
+  <div class="hero-gallery" id="heroGallery" aria-label="Featured products slideshow">
     <!-- Populated by products.js after catalogue loads -->
     <div class="hero-img-wrap"><div style="width:100%;height:100%;background:var(--border);aspect-ratio:3/4;border-radius:2px;"></div></div>
     <div class="hero-img-wrap"><div style="width:100%;height:100%;background:var(--shimmer-to);aspect-ratio:3/4;border-radius:2px;"></div></div>
   </div>
+  <button type="button" class="hero-btn hero-btn--mobile" onclick="scrollToShop()">Explore Collection</button>
 </header>
 
 
