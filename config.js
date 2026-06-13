@@ -33,3 +33,7 @@ let colorVariants = [];
 let currentGalleryImages = [];
 let currentGalleryIndex = 0;
 let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+
+// ─── ADMIN BULK SELECT ────────────────────────────────────────────────────
+let adminSelectMode = false;
+let adminSelectedIds = new Set();

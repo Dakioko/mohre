@@ -65,7 +65,8 @@ function openDetailPanel(id) {
   const sizesHTML = sizes.length ? `
     <div class="detail-field">
       <div class="detail-field-label">
-        Size
+        Size <span class="required-indicator" aria-hidden="true">*</span>
+        <span class="sr-only"> (required)</span>
         <button class="detail-size-guide-link" onclick="showSizeGuide()">Size guide</button>
       </div>
       <div class="detail-sizes" id="detailSizes">
@@ -286,30 +287,11 @@ function selectDetailColor(el, colorName, photoUrl, productId, variantIdx) {
 
 /**
  * Returns true if the product requires a size and one has been selected.
- * Shows an inline error + shakes the chips if validation fails.
+ * Delegates to the shared _validateSizeSelection helper (see ui.js).
  */
 function _validateSize() {
   const p = products.find(x => x.id === detailProductId);
-  if (!p) return true;
-  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
-  if (!sizes.length) return true; // no sizes defined — nothing to validate
-
-  if (detailSelectedSize) return true;
-
-  // Show error message
-  const errEl = document.getElementById("detailSizeError");
-  if (errEl) errEl.style.display = "block";
-
-  // Shake the size chips container
-  const sizesEl = document.getElementById("detailSizes");
-  if (sizesEl) {
-    sizesEl.classList.add("shake");
-    setTimeout(() => sizesEl.classList.remove("shake"), 500);
-  }
-
-  // Scroll the size field into view
-  errEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  return false;
+  return _validateSizeSelection(p, detailSelectedSize, "detailSizeError", "detailSizes");
 }
 
 function _hideSizeError() {

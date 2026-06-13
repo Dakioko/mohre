@@ -284,7 +284,6 @@ function addToCart(productId, size, color) {
   announce(`${p.name} added to cart. ${itemCount} item${itemCount > 1 ? 's' : ''} in cart.`);
   showToast(`Added "${p.name}" to cart`);
   vibrateOnAction();
-  setTimeout(() => openCart(), 350);
 }
 
 function removeFromCart(idx) {

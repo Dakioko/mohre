@@ -67,30 +67,12 @@ function _closeSizeModalNow() {
 
 /**
  * Validate that a size has been selected when the product has sizes defined.
- * Mirrors _validateSize in detail.js but scoped to the size modal.
+ * Delegates to the shared _validateSizeSelection helper (see ui.js).
  * @returns {boolean} true if valid (or no size required), false otherwise
  */
 function _validateModalSize() {
   const p = products.find(x => x.id === pendingOrderId);
-  if (!p) return true;
-  const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
-  if (!sizes.length) return true; // no sizes defined — nothing to validate
-  if (selectedSize) return true;
-
-  const errEl = document.getElementById("sizeModalError");
-  if (errEl) {
-    errEl.style.display = "block";
-    errEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  announce("Please select a size before continuing.");
-
-  const chipsEl = document.getElementById("sizeModalChips");
-  if (chipsEl) {
-    chipsEl.classList.add("shake");
-    setTimeout(() => chipsEl.classList.remove("shake"), 500);
-  }
-
-  return false;
+  return _validateSizeSelection(p, selectedSize, "sizeModalError", "sizeModalChips");
 }
 
 function confirmOrder() {

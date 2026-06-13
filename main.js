@@ -69,6 +69,7 @@ document.addEventListener("keydown", e => {
     closeSizeGuideModal();
     closeOrderSummaryModal();
     cancelAdminPanel();
+    if (adminSelectMode) toggleAdminSelectMode();
     return;
   }
 

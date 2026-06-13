@@ -415,7 +415,7 @@ async function toggleSold(id) {
     const result = await apiPost({ action: "toggleSold", id });
     const p = products.find(x => x.id === id);
     if (p) p.isSold = result.isSold;
-    renderProducts();
+    renderProducts(true);
     showToast(result.isSold ? "Marked as sold." : "Back in collection.");
   } catch {
     showToast("Couldn't update item.");
@@ -596,6 +596,8 @@ function _activateAdminUI() {
   document.body.classList.add("is-admin");
   const addBtn = document.getElementById("addItemBtn");
   if (addBtn) addBtn.style.display = "flex";
+  const selectBtn = document.getElementById("adminSelectBtn");
+  if (selectBtn) selectBtn.style.display = "flex";
   renderProducts();
 }
 
@@ -604,6 +606,9 @@ function _deactivateAdminUI() {
   document.body.classList.remove("is-admin");
   const addBtn = document.getElementById("addItemBtn");
   if (addBtn) addBtn.style.display = "none";
+  const selectBtn = document.getElementById("adminSelectBtn");
+  if (selectBtn) selectBtn.style.display = "none";
+  if (adminSelectMode) toggleAdminSelectMode();
   document.getElementById("adminPanel")?.classList.remove("visible");
   document.querySelectorAll('.admin-card-btns').forEach(el => el.remove());
   renderProducts();
@@ -631,4 +636,147 @@ function injectAdminNavButton() {
   adminBtn.style.display = "none";
   adminBtn.onclick = toggleAdminPanel;
   navActions.appendChild(adminBtn);
+
+  injectAdminSelectButton(navActions);
+}
+
+// ─── BULK SELECT MODE ─────────────────────────────────────────────────────
+
+/**
+ * Inject the "Select" toggle button into the nav, shown only in admin mode.
+ */
+function injectAdminSelectButton(navActions) {
+  if (document.getElementById("adminSelectBtn")) return;
+
+  const selectBtn = document.createElement('button');
+  selectBtn.id = "adminSelectBtn";
+  selectBtn.className = "icon-btn";
+  selectBtn.setAttribute('aria-label', 'Select multiple items');
+  selectBtn.innerHTML = `
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>`;
+  selectBtn.style.display = "none";
+  selectBtn.onclick = toggleAdminSelectMode;
+  navActions.appendChild(selectBtn);
+}
+
+/**
+ * Toggle bulk-select mode on/off. Clears any current selection when exiting.
+ */
+function toggleAdminSelectMode() {
+  adminSelectMode = !adminSelectMode;
+  if (!adminSelectMode) adminSelectedIds.clear();
+  document.body.classList.toggle("admin-select-mode", adminSelectMode);
+
+  const selectBtn = document.getElementById("adminSelectBtn");
+  if (selectBtn) {
+    selectBtn.classList.toggle("active", adminSelectMode);
+    selectBtn.setAttribute('aria-label', adminSelectMode ? 'Exit selection mode' : 'Select multiple items');
+  }
+
+  renderBulkActionBar();
+  renderProducts(true);
+}
+
+/**
+ * Called from each product card's onclick. In select mode, toggles that
+ * card's selection instead of opening the detail panel.
+ */
+function _handleCardActivate(id) {
+  if (adminSelectMode) {
+    toggleCardSelection(id);
+    return;
+  }
+  openDetailPanel(id);
+}
+
+function toggleCardSelection(id) {
+  if (adminSelectedIds.has(id)) {
+    adminSelectedIds.delete(id);
+  } else {
+    adminSelectedIds.add(id);
+  }
+
+  const card = document.querySelector(`.product-card[data-id="${id}"]`);
+  if (card) {
+    const selected = adminSelectedIds.has(id);
+    card.classList.toggle("selected-for-bulk", selected);
+    card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  }
+
+  renderBulkActionBar();
+}
+
+/**
+ * Render (or remove) the floating bulk action bar based on current
+ * select mode + selection count.
+ */
+function renderBulkActionBar() {
+  let bar = document.getElementById("bulkActionBar");
+
+  if (!adminSelectMode) {
+    bar?.remove();
+    return;
+  }
+
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = "bulkActionBar";
+    bar.className = "bulk-action-bar";
+    document.body.appendChild(bar);
+  }
+
+  const count = adminSelectedIds.size;
+  bar.innerHTML = `
+    <span class="bulk-action-count">${count} selected</span>
+    <div class="bulk-action-buttons">
+      <button class="btn-ghost" ${count === 0 ? 'disabled' : ''} onclick="bulkSetSold(true)">Mark Sold</button>
+      <button class="btn-ghost" ${count === 0 ? 'disabled' : ''} onclick="bulkSetSold(false)">Mark Available</button>
+      <button class="btn-primary" onclick="toggleAdminSelectMode()">Done</button>
+    </div>`;
+}
+
+/**
+ * Apply a sold/available status to all selected products.
+ * Sends one toggleSold-equivalent request per item; only fires for
+ * items whose current state differs from the target.
+ * @param {boolean} sold - target isSold value
+ */
+async function bulkSetSold(sold) {
+  const ids = Array.from(adminSelectedIds);
+  if (!ids.length) return;
+
+  const bar = document.getElementById("bulkActionBar");
+  if (bar) {
+    bar.querySelectorAll('button').forEach(b => b.disabled = true);
+    const countEl = bar.querySelector('.bulk-action-count');
+    if (countEl) countEl.textContent = `Updating ${ids.length} item${ids.length > 1 ? 's' : ''}…`;
+  }
+
+  let succeeded = 0;
+  let failed = 0;
+
+  for (const id of ids) {
+    const p = products.find(x => x.id === id);
+    if (!p || p.isSold === sold) { succeeded++; continue; }
+    try {
+      const result = await apiPost({ action: "toggleSold", id });
+      p.isSold = result.isSold;
+      succeeded++;
+    } catch (e) {
+      failed++;
+    }
+  }
+
+  adminSelectedIds.clear();
+  renderProducts(true);
+
+  if (failed === 0) {
+    showToast(`${succeeded} item${succeeded > 1 ? 's' : ''} updated.`);
+  } else {
+    showToast(`${succeeded} updated, ${failed} failed. Try again for the rest.`);
+  }
+
+  toggleAdminSelectMode();
 }

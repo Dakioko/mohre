@@ -11,9 +11,271 @@
   <meta property="og:image" content="https://mohrehub.com/og-image.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Jost:wght@300;400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Jost:wght@300;400;500;600&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ─── NEW HERO ─────────────────────────────────────────────────────── */
+    .hero-split {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      height: 52vh;
+      min-height: 500px;
+      position: relative;
+    }
+
+    .hero-split .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 12% 40px 16%;
+      background-color: #f4f1ea;
+    }
+
+    .hero-split .tagline {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      color: #767676;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .hero-split .text-frame { margin-bottom: 20px; }
+
+    .hero-split h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      line-height: 1.2;
+      font-weight: 400;
+      color: #1a1a1a;
+    }
+
+    .hero-split h1 span {
+      font-style: italic;
+      color: #6e7e65;
+      font-weight: 400;
+    }
+
+    .hero-split .hero-description {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #4a4a4a;
+      margin-bottom: 35px;
+      max-width: 440px;
+    }
+
+    .hero-split .cta-group {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      margin-bottom: 35px;
+    }
+
+    .hero-split .btn-hero-primary {
+      background-color: #1a1a1a;
+      color: #fff;
+      padding: 16px 35px;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.80rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 500;
+      border: 1px solid #1a1a1a;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .hero-split .btn-hero-primary::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: #fcfbfa;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      z-index: -1;
+    }
+
+    .hero-split .btn-hero-primary:hover { color: #1a1a1a; }
+    .hero-split .btn-hero-primary:hover::before { transform: translateY(0); }
+
+    .hero-split .btn-hero-secondary {
+      color: #1a1a1a;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.80rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 500;
+      position: relative;
+      padding: 5px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .hero-split .btn-hero-secondary::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 1px;
+      background-color: #1a1a1a;
+      transform: scaleX(0.2);
+      transform-origin: left;
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .hero-split .btn-hero-secondary:hover::after { transform: scaleX(1); }
+
+    .hero-split .social-proof {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      color: #767676;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
+
+    /* Right carousel panel */
+    .hero-carousel-container {
+      position: relative;
+      background-color: #e5e5e5;
+      overflow: hidden;
+    }
+
+    .hero-carousel-container .slide-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .hero-carousel-container .slide-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      opacity: 0;
+      transform: scale(1.04);
+      transition: opacity 0.9s ease-in-out, transform 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+      z-index: 1;
+    }
+
+    .hero-carousel-container .slide-img.active {
+      opacity: 1;
+      transform: scale(1);
+      z-index: 2;
+    }
+
+    .hero-carousel-container .carousel-indicators {
+      position: absolute;
+      bottom: 30px;
+      left: 40px;
+      display: flex;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .hero-carousel-container .indicator-dash {
+      width: 40px;
+      height: 2px;
+      background-color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .hero-carousel-container .indicator-dash.active {
+      background-color: rgba(255,255,255,1);
+    }
+
+    .hero-carousel-container .promo-badge {
+      position: absolute;
+      bottom: 30px;
+      right: 40px;
+      background-color: #fcfbfa;
+      border-radius: 50%;
+      width: 85px;
+      height: 85px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.04);
+      text-align: center;
+      z-index: 5;
+    }
+
+    .hero-carousel-container .promo-badge .percentage {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      line-height: 1;
+    }
+
+    .hero-carousel-container .promo-badge .text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #767676;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero-split h1 { font-size: 2.3rem; }
+    }
+
+    @media (max-width: 768px) {
+      .hero-split {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: auto;
+      }
+
+      .hero-split .hero-content {
+        padding: 60px 6% 50px 6%;
+        text-align: center;
+        align-items: center;
+      }
+
+      .hero-split h1 { font-size: 2.1rem; }
+
+      .hero-split .cta-group {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+        margin-bottom: 25px;
+      }
+
+      .hero-split .btn-hero-primary {
+        width: 100%;
+        text-align: center;
+        padding: 16px 20px;
+      }
+
+      .hero-split .social-proof { justify-content: center; }
+      .hero-carousel-container { height: 460px; }
+      .hero-carousel-container .carousel-indicators {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 25px;
+      }
+      .hero-carousel-container .promo-badge { right: 25px; bottom: 25px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -48,7 +310,7 @@
 
       <!-- Mobile search toggle -->
       <button type="button" class="icon-btn mobile-search-toggle"
-        onclick="toggleMobileSearch(true)" aria-label="Search">
+        onclick="openMobileSearch()" aria-label="Search">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -74,7 +336,7 @@
       </button>
     </div><!-- /.nav-actions -->
 
-    <!-- Mobile search overlay -->
+    <!-- Mobile search bar (inline, replaces nav actions) -->
     <div class="mobile-search-overlay" id="mobileSearchOverlay">
       <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -84,7 +346,7 @@
         id="mobileSearch"
         oninput="handleSearch(this.value)"
         aria-label="Search products" />
-      <button type="button" class="icon-btn" onclick="toggleMobileSearch(false)" aria-label="Close search">
+      <button type="button" class="icon-btn" onclick="closeMobileSearch()" aria-label="Close search">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M6 18L18 6M6 6l12 12"/>
@@ -95,14 +357,46 @@
 </div><!-- /.global-sticky-header -->
 
 <!-- ─── HERO ────────────────────────────────────────────────────────────── -->
-<header class="hero hero--with-image" style="background-image: url('images/hero-banner.png');">
-  <div class="hero-overlay"></div>
-  <div class="hero-text">
-      <span class="hero-eyebrow">New arrivals weekly</span>
-      <h1>Shop Easily.<br>Dress <span>Smarter</span>.</h1>
-    <button type="button" class="hero-btn" onclick="resetViewToShop()">Shop New Arrivals</button>
-  </div>
-</header>
+<main class="hero-split">
+
+  <!-- Left Column: Content -->
+  <section class="hero-content">
+    <span class="tagline">Summer Collection 2026</span>
+    <div class="text-frame">
+      <h1>Designed to be <br>lived in. <span>Effortlessly.</span></h1>
+    </div>
+    <p class="hero-description">
+      Discover curated minimalist essentials crafted from sustainably sourced premium linens and organic cottons. Built to last seasons.
+    </p>
+    <div class="cta-group">
+      <button class="btn-hero-primary" onclick="resetViewToShop()">Shop New Arrivals</button>
+      <button class="btn-hero-secondary" onclick="goToCategory('New')">Explore New In</button>
+    </div>
+    <div class="social-proof">
+      <span class="stars">★★★★★</span>
+      <span>Highly rated by our customers</span>
+    </div>
+  </section>
+
+  <!-- Right Column: Carousel -->
+  <section class="hero-carousel-container">
+    <div class="slide-wrapper">
+      <img class="slide-img active" src="https://res.cloudinary.com/dgvpgo3bw/image/upload/v1781216339/w6pna7b0guiqp9en06kz.jpg" alt="Editorial linen dress">
+      <img class="slide-img" src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=80" alt="Modern tailored apparel">
+      <img class="slide-img" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80" alt="Premium earth-toned linen">
+    </div>
+    <div class="carousel-indicators">
+      <div class="indicator-dash active" onclick="jumpToSlide(0)"></div>
+      <div class="indicator-dash" onclick="jumpToSlide(1)"></div>
+      <div class="indicator-dash" onclick="jumpToSlide(2)"></div>
+    </div>
+    <div class="promo-badge">
+      <span class="percentage">20%</span>
+      <span class="text">Off Order</span>
+    </div>
+  </section>
+
+</main>
 
 
 <!-- ─── CATEGORY FILTER BAR ──────────────────────────────────────────── -->
@@ -376,7 +670,7 @@
     <p class="modal-title" id="sizeModalName" style="font-size:1.2rem;margin-bottom:0.25rem;"></p>
     <p style="text-align:center;font-weight:500;margin-bottom:1rem;" id="sizeModalPrice"></p>
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;">Select your size</span>
+      <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;">Select your size <span class="required-indicator" aria-hidden="true">*</span><span class="sr-only"> (required)</span></span>
       <button class="size-guide-link" onclick="showSizeGuide()">Size guide →</button>
     </div>
     <div class="size-modal-chips" id="sizeModalChips"></div>
@@ -446,8 +740,7 @@
     <div id="orderSummaryContent"></div>
     <div class="delivery-info">
       <label for="deliveryAddress">Delivery address <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
-      <textarea id="deliveryAddress" placeholder="We'll confirm via WhatsApp" rows="2"></textarea>
-      <p class="delivery-address-hint">💡 Adding your address speeds up delivery confirmation.</p>
+      <textarea id="deliveryAddress" placeholder="e.g. Kilimani, Nairobi — helps us quote delivery faster" rows="2"></textarea>
     </div>
     <div style="display:flex;gap:0.5rem;margin-top:1rem;">
       <button class="btn-ghost" onclick="closeOrderSummaryModal()">Cancel</button>
@@ -515,6 +808,37 @@
 <script src="modals.js"></script>
 <script src="admin.js"></script>
 <script src="main.js"></script>
+
+<!-- ─── HERO CAROUSEL ────────────────────────────────────────────────── -->
+<script>
+  (function () {
+    const slides     = document.querySelectorAll('.hero-carousel-container .slide-img');
+    const indicators = document.querySelectorAll('.hero-carousel-container .indicator-dash');
+    if (!slides.length) return;
+
+    let currentIndex  = 0;
+    let slideInterval = setInterval(nextHeroSlide, 7000);
+
+    function updateHeroSlider(index) {
+      slides.forEach(s => s.classList.remove('active'));
+      indicators.forEach(i => i.classList.remove('active'));
+      slides[index].classList.add('active');
+      indicators[index].classList.add('active');
+    }
+
+    function nextHeroSlide() {
+      currentIndex = (currentIndex + 1) % slides.length;
+      updateHeroSlider(currentIndex);
+    }
+
+    window.jumpToSlide = function (index) {
+      currentIndex = index;
+      updateHeroSlider(currentIndex);
+      clearInterval(slideInterval);
+      slideInterval = setInterval(nextHeroSlide, 7000);
+    };
+  })();
+</script>
 
 </body>
 </html>

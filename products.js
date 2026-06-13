@@ -88,7 +88,7 @@ function showSkeletons(count = 6) {
 }
 
 // ─── RENDER PRODUCTS ──────────────────────────────────────────────────────
-function renderProducts() {
+function renderProducts(forceRebuild = false) {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
 
@@ -112,8 +112,10 @@ function renderProducts() {
       <div class="empty-state">
         <div class="empty-state-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+            <circle cx="10" cy="10" r="7" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+            <line x1="15" y1="15" x2="21" y2="21" stroke-linecap="round" stroke-width="1.5"/>
+            <line x1="7.5" y1="7.5" x2="12.5" y2="12.5" stroke-linecap="round" stroke-width="1.5"/>
+            <line x1="12.5" y1="7.5" x2="7.5" y2="12.5" stroke-linecap="round" stroke-width="1.5"/>
           </svg>
         </div>
         <p class="empty-state-title">Nothing here yet</p>
@@ -128,7 +130,7 @@ function renderProducts() {
   // Check if the filtered set has changed — if same IDs in same order, skip full rebuild
   const currentIds  = Array.from(grid.querySelectorAll('.product-card')).map(c => parseInt(c.dataset.id));
   const filteredIds = filtered.map(p => p.id);
-  const sameSet     = currentIds.length === filteredIds.length && filteredIds.every((id, i) => id === currentIds[i]);
+  const sameSet     = !forceRebuild && currentIds.length === filteredIds.length && filteredIds.every((id, i) => id === currentIds[i]);
 
   if (sameSet) {
     _updateWishlistStates();
@@ -151,6 +153,10 @@ function renderProducts() {
           <span class="card-swatch ${vi === 0 ? 'active' : ''}"
             style="background:${v.color || '#ccc'}"
             title="${escapeHtml(v.name || '')}"
+            role="button"
+            tabindex="0"
+            aria-label="${escapeHtml(v.name || 'Colour option')}"
+            aria-pressed="${vi === 0 ? 'true' : 'false'}"
             data-product-id="${p.id}"
             data-variant-idx="${vi}"
             data-photo="${escapeHtml(v.photo || p.photo || '')}"
@@ -171,16 +177,17 @@ function renderProducts() {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
       </button>
-      <span class="card-img-counter" id="imgCounter${p.id}">1/${images.length}</span>` : '';
+` : '';
 
     return `
-      <article class="product-card${p.isSold ? ' sold-out' : ''}"
+      <article class="product-card${p.isSold ? ' sold-out' : ''}${adminSelectedIds.has(p.id) ? ' selected-for-bulk' : ''}"
         data-id="${p.id}"
         style="animation-delay:${Math.min(i * 0.05, 0.4)}s"
-        onclick="openDetailPanel(${p.id})"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetailPanel(${p.id});}"
+        onclick="_handleCardActivate(${p.id})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_handleCardActivate(${p.id});}"
         role="button"
         tabindex="0"
+        ${adminSelectMode ? `aria-pressed="${adminSelectedIds.has(p.id) ? 'true' : 'false'}"` : ''}
         aria-label="${escapeHtml(p.name)}, ${fmtPrice(p.price)}${p.isSold ? ', sold out' : ''}">
         <div class="card-img-wrap" id="imgWrap${p.id}" data-img-idx="0">
           <div class="card-img-placeholder">
@@ -210,8 +217,10 @@ function renderProducts() {
             </svg>
           </button>
           ${navArrowsHTML}
-          <div class="card-quick-view" onclick="event.stopPropagation();openDetailPanel(${p.id})">
-            Shop Now
+          <div class="admin-select-checkbox" aria-hidden="true">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
           </div>
         </div>
         <div class="card-meta-minimal">
@@ -227,6 +236,7 @@ function renderProducts() {
 
   // Attach swatch click listeners via delegation — avoids inline onclick photo URL injection
   grid.addEventListener('click', _handleSwatchClick, { once: false });
+  grid.addEventListener('keydown', _handleSwatchKeydown, { once: false });
 }
 
 /**
@@ -237,6 +247,25 @@ function _handleSwatchClick(e) {
   const swatch = e.target.closest('.card-swatch');
   if (!swatch) return;
   e.stopPropagation();
+  _activateSwatch(e, swatch);
+}
+
+/**
+ * Delegated handler for keyboard activation (Enter/Space) of card swatches.
+ */
+function _handleSwatchKeydown(e) {
+  const swatch = e.target.closest('.card-swatch');
+  if (!swatch) return;
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  _activateSwatch(e, swatch);
+}
+
+/**
+ * Shared activation logic for mouse and keyboard swatch interaction.
+ */
+function _activateSwatch(e, swatch) {
   const productId  = parseInt(swatch.dataset.productId, 10);
   const variantIdx = parseInt(swatch.dataset.variantIdx, 10);
   const photo      = swatch.dataset.photo || '';
@@ -282,7 +311,11 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
   const card = document.querySelector(`.product-card[data-id="${productId}"]`);
   if (!card) return;
 
-  card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === variantIdx));
+  card.querySelectorAll('.card-swatch').forEach((s, i) => {
+    const active = i === variantIdx;
+    s.classList.toggle('active', active);
+    s.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 
   if (photoUrl) {
     const imgWrap = card.querySelector('.card-img-wrap');
@@ -300,8 +333,7 @@ function swapVariant(e, productId, variantIdx, photoUrl, colorName) {
         const images = _cardImageList(p);
         const idx = images.indexOf(photoUrl);
         imgWrap.dataset.imgIdx = idx > -1 ? idx : 0;
-        const counter = document.getElementById(`imgCounter${productId}`);
-        if (counter) counter.textContent = `${(idx > -1 ? idx : 0) + 1}/${images.length}`;
+
       }
     }
   }
@@ -342,12 +374,15 @@ function cycleCardImage(productId, dir) {
   if (variants.length) {
     const vi = variants.findIndex(v => v.photo === images[idx]);
     if (vi > -1) {
-      card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === vi));
+      card.querySelectorAll('.card-swatch').forEach((s, i) => {
+        const active = i === vi;
+        s.classList.toggle('active', active);
+        s.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
     }
   }
 
-  const counter = document.getElementById(`imgCounter${productId}`);
-  if (counter) counter.textContent = `${idx + 1}/${images.length}`;
+
 }
 
 // ─── LOAD PRODUCTS ────────────────────────────────────────────────────────

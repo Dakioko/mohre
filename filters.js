@@ -104,7 +104,7 @@ function updateActiveFiltersBar() {
 // ─── PERSIST / RESTORE FILTER PREFERENCES ────────────────────────────────
 function saveFilterPreference() {
   try {
-    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter }));
+    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter, savedAt: Date.now() }));
   } catch (e) {}
 }
 
@@ -113,6 +113,11 @@ function applySavedFilters() {
     const saved = localStorage.getItem('filterPreference');
     if (!saved) return;
     const prefs = JSON.parse(saved);
+    const age = Date.now() - (prefs.savedAt || 0);
+    if (age > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('filterPreference');
+      return;
+    }
     if (prefs.category && prefs.category !== 'All') {
       const filterBtn = document.querySelector(`.filter-btn[data-category="${prefs.category}"]`);
       if (filterBtn) setFilter(prefs.category, filterBtn);

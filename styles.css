@@ -314,19 +314,19 @@ nav {
 .mobile-search-overlay {
   position: absolute;
   top: 0;
-  left: 0;
+  right: 0;
   width: 100%;
   height: var(--nav-h);
   background: color-mix(in srgb, var(--bg) 98%, transparent);
   backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
-  padding: 0 1.5rem;
-  gap: 1rem;
+  padding: 0 1rem 0 1.5rem;
+  gap: 0.75rem;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-8px);
-  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  transform: translateX(12px);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16,1,0.3,1);
   z-index: 110;
 }
 
@@ -335,7 +335,7 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
 .mobile-search-overlay.open {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
 .mobile-search-overlay .search-input { flex: 1; width: 100%; }
@@ -796,36 +796,6 @@ body.dark-mode .card-wishlist-btn { background: rgba(37,35,32,0.88); }
 .card-wishlist-btn.active svg { fill: #c9536a; }
 
 /* ─── QUICK VIEW ──────────────────────────────────────────────────────── */
-.card-quick-view {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  color: white;
-  text-align: center;
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.55rem;
-  z-index: 4;
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.2s, transform 0.2s;
-  cursor: pointer;
-  pointer-events: none;
-}
-
-@media (hover: hover) {
-  .product-card:hover .card-quick-view {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-}
-
 /* ─── CARD IMAGE NAV ARROWS ──────────────────────────────────────────────── */
 .card-nav-arrow {
   position: absolute;
@@ -925,6 +895,7 @@ body.dark-mode .card-nav-arrow:hover { background: rgba(30,30,30,0.9); }
   transform: translate(-50%, -50%);
 }
 .card-swatch:hover, .card-swatch.active { border-color: var(--primary); transform: scale(1.2); }
+.card-swatch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .card-price-minimal {
   font-size: 0.8rem;
@@ -1397,6 +1368,123 @@ body:not(.is-admin) .admin-card-btns {
 .admin-card-btns button:hover { background: var(--accent); }
 .admin-card-btns button.btn-danger { background: var(--danger); }
 .admin-card-btns button.btn-danger:hover { background: #8b2020; }
+
+/* ─── ADMIN BULK SELECT MODE ──────────────────────────────────────────── */
+
+#adminSelectBtn.active {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+/* Selection checkbox overlay on each card — hidden outside select mode */
+.admin-select-checkbox {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 22;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.admin-select-checkbox svg {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+body.admin-select-mode .admin-select-checkbox {
+  display: flex;
+}
+
+.product-card.selected-for-bulk .admin-select-checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.product-card.selected-for-bulk .admin-select-checkbox svg {
+  opacity: 1;
+}
+
+/* Visually mark selected cards */
+body.admin-select-mode .product-card {
+  cursor: pointer;
+}
+
+.product-card.selected-for-bulk {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Hide per-card admin buttons and disable secondary interactions
+   while in bulk-select mode to avoid conflicting actions */
+body.admin-select-mode .admin-card-btns,
+body.admin-select-mode .card-wishlist-btn,
+body.admin-select-mode .card-nav-arrow {
+  display: none !important;
+}
+
+body.admin-select-mode .card-swatch {
+  pointer-events: none;
+}
+
+/* Floating bulk action bar */
+.bulk-action-bar {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  font-size: 0.8rem;
+  max-width: calc(100vw - 1.5rem);
+}
+
+.bulk-action-count {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bulk-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bulk-action-buttons button {
+  font-size: 0.7rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.bulk-action-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .bulk-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    width: calc(100vw - 1.5rem);
+    gap: 0.5rem;
+  }
+  .bulk-action-buttons { justify-content: center; }
+}
+
 .extra-photos-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.3rem; }
 
 .extra-photo-item { position: relative; }
@@ -1655,6 +1743,12 @@ body.dark-mode .detail-panel { box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4); }
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.required-indicator {
+  color: var(--danger);
+  font-weight: 700;
+  margin-left: 0.15rem;
 }
 
 .detail-size-guide-link {

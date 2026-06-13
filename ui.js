@@ -1,6 +1,40 @@
 // ─── HELPER FUNCTIONS ─────────────────────────────────────────────────────
 
 /**
+ * Shared size-selection validator used by both the detail panel and the
+ * size modal. Returns true if the product requires no size, or a size
+ * has already been selected. Otherwise shows an inline error, shakes the
+ * chips container, announces the issue, and scrolls the error into view.
+ *
+ * @param {object|undefined} product - the product being validated
+ * @param {string|null} selectedSize - currently selected size, if any
+ * @param {string} errElId - id of the error message element to show
+ * @param {string} chipsElId - id of the size-chips container to shake
+ * @returns {boolean} true if valid (or no size required), false otherwise
+ */
+function _validateSizeSelection(product, selectedSize, errElId, chipsElId) {
+  if (!product) return true;
+  const sizes = product.sizes ? product.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+  if (!sizes.length) return true; // no sizes defined — nothing to validate
+  if (selectedSize) return true;
+
+  const errEl = document.getElementById(errElId);
+  if (errEl) {
+    errEl.style.display = "block";
+    errEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  announce("Please select a size before continuing.");
+
+  const chipsEl = document.getElementById(chipsElId);
+  if (chipsEl) {
+    chipsEl.classList.add("shake");
+    setTimeout(() => chipsEl.classList.remove("shake"), 500);
+  }
+
+  return false;
+}
+
+/**
  * Format a number as a KSh price string with two decimal places.
  * e.g. 2500 → "KSh 2,500.00"
  * @param {number|string} amount
@@ -135,16 +169,27 @@ function scrollToShop() {
 }
 
 // ─── MOBILE SEARCH ────────────────────────────────────────────────────────
-function toggleMobileSearch(open) {
+function openMobileSearch() {
   const overlay = document.getElementById("mobileSearchOverlay");
+  const actions = document.querySelector(".nav-actions");
   if (!overlay) return;
-  if (open) {
-    overlay.classList.add("open");
-    document.getElementById("mobileSearch")?.focus();
-  } else {
-    overlay.classList.remove("open");
-    if (!document.getElementById("mobileSearch")?.value) clearSearch();
-  }
+  overlay.classList.add("open");
+  if (actions) actions.style.visibility = "hidden";
+  setTimeout(() => document.getElementById("mobileSearch")?.focus(), 50);
+}
+
+function closeMobileSearch() {
+  const overlay = document.getElementById("mobileSearchOverlay");
+  const actions = document.querySelector(".nav-actions");
+  if (!overlay) return;
+  overlay.classList.remove("open");
+  if (actions) actions.style.visibility = "";
+  const input = document.getElementById("mobileSearch");
+  if (input && !input.value) clearSearch();
+}
+
+function toggleMobileSearch(open) {
+  if (open) openMobileSearch(); else closeMobileSearch();
 }
 
 // ─── DESKTOP SEARCH EXPAND / COLLAPSE ────────────────────────────────────
