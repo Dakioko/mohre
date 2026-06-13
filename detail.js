@@ -14,8 +14,7 @@ function openDetailPanel(id) {
   detailSelectedColor = null;
   detailQty          = 1;
 
-  let variants = [];
-  try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
+  const variants = _parseJSON(p.variants, []);
   const hasVariants = variants.length > 0;
   detailSelectedColor = hasVariants ? (variants[0].name || null) : null;
 
@@ -23,17 +22,16 @@ function openDetailPanel(id) {
 
   // Build gallery image list
   const galleryPhotos = [];
+  // Always include main photo first when present and no variants (avoids duplicate with variant photos)
   if (p.photo && !hasVariants) galleryPhotos.push(p.photo);
-  try {
-    if (p.photos) {
-      const extras = JSON.parse(p.photos);
-      extras.forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); });
-    }
-  } catch (e) {}
+  // Extra photos
+  _parseJSON(p.photos, []).forEach(src => { if (src && src !== p.photo) galleryPhotos.push(src); });
+  // Variant photos
   if (hasVariants) {
     variants.forEach(v => { if (v.photo && !galleryPhotos.includes(v.photo)) galleryPhotos.push(v.photo); });
-    if (!galleryPhotos.length && p.photo) galleryPhotos.push(p.photo);
   }
+  // Fallback: if nothing resolved, use the main photo regardless of variant state
+  if (!galleryPhotos.length && p.photo) galleryPhotos.push(p.photo);
   if (!galleryPhotos.length) galleryPhotos.push(placeholder);
 
   // Left column: main image + thumbnails
@@ -81,7 +79,7 @@ function openDetailPanel(id) {
       </p>
     </div>` : '';
 
-  // Colours
+  // Colours — use data-* attributes; JS listener attached after innerHTML set
   const colorsHTML = hasVariants ? `
     <div class="detail-field">
       <div class="detail-field-label">Colour</div>
@@ -91,7 +89,7 @@ function openDetailPanel(id) {
             data-color-name="${escapeHtml(v.name || '')}"
             data-photo="${escapeHtml(v.photo || p.photo || '')}"
             data-variant-idx="${i}"
-            onclick="selectDetailColor(this,'${(v.name || '').replace(/'/g, "\\'")}','${(v.photo || p.photo || '').replace(/'/g, "\\'")}',${p.id},${i})">
+            data-product-id="${p.id}">
             <span class="detail-color-chip-dot" style="background:${v.color || '#ccc'}"></span>
             ${escapeHtml(v.name || 'Colour ' + (i + 1))}
           </button>
@@ -216,6 +214,17 @@ function openDetailPanel(id) {
         ${galleryHTML}
         ${infoHTML}
       </div>`;
+
+    // Attach colour chip listeners via JS — avoids inline onclick photo URL injection
+    bodyEl.querySelectorAll('.detail-color-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const colorName  = btn.dataset.colorName  || '';
+        const photoUrl   = btn.dataset.photo       || '';
+        const variantIdx = parseInt(btn.dataset.variantIdx, 10);
+        const productId  = parseInt(btn.dataset.productId,  10);
+        selectDetailColor(btn, colorName, photoUrl, productId, variantIdx);
+      });
+    });
   }
 
   document.getElementById("detailPanel")?.classList.add("open");
@@ -334,7 +343,19 @@ function detailOrder() {
   if (!_validateSize()) return;
   const p = products.find(x => x.id === detailProductId);
   if (!p) return;
-  sendWhatsApp(p, detailSelectedSize, detailSelectedColor, detailQty);
+
+  const qty         = detailQty || 1;
+  const subtotal    = Number(p.price) * qty;
+  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const total       = subtotal + deliveryFee;
+
+  pendingOrderData = {
+    orderItems: [{ name: p.name, price: p.price, qty, size: detailSelectedSize, color: detailSelectedColor }],
+    subtotal,
+    deliveryFee,
+    total
+  };
+  showOrderSummaryModal();
 }
 
 /**

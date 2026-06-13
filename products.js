@@ -9,28 +9,20 @@
  */
 function _cardImageList(p) {
   const images = [];
+  const variants = _parseJSON(p.variants, []);
+  const extras   = _parseJSON(p.photos,   []);
+
   // Use primary photo if set; otherwise fall back to the first variant photo
   // so products with colour variants don't need a redundant duplicate image.
   if (p.photo) {
     images.push(p.photo);
-  } else {
-    try {
-      const variants = p.variants ? JSON.parse(p.variants) : [];
-      if (variants.length && variants[0].photo) images.push(variants[0].photo);
-    } catch (e) {}
+  } else if (variants.length && variants[0].photo) {
+    images.push(variants[0].photo);
   }
-  try {
-    if (p.photos) {
-      const extras = JSON.parse(p.photos);
-      extras.forEach(src => { if (src && !images.includes(src)) images.push(src); });
-    }
-  } catch (e) {}
-  try {
-    if (p.variants) {
-      const variants = JSON.parse(p.variants);
-      variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
-    }
-  } catch (e) {}
+
+  extras.forEach(src => { if (src && !images.includes(src)) images.push(src); });
+  variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
+
   return images;
 }
 
@@ -146,8 +138,7 @@ function renderProducts() {
   }
 
   grid.innerHTML = filtered.map((p, i) => {
-    let variants = [];
-    try { if (p.variants) variants = JSON.parse(p.variants); } catch (e) {}
+    let variants = _parseJSON(p.variants, []);
     const hasVariants = variants.length > 0;
     const inWishlist  = isInWishlist(p.id);
     const showNewBadge = isNewArrival(p);
@@ -160,8 +151,10 @@ function renderProducts() {
           <span class="card-swatch ${vi === 0 ? 'active' : ''}"
             style="background:${v.color || '#ccc'}"
             title="${escapeHtml(v.name || '')}"
-            data-color="${escapeHtml(v.name || '')}"
-            onclick="event.stopPropagation();swapVariant(event,${p.id},${vi},'${(v.photo || p.photo || '').replace(/'/g, "\\'")}','${(v.name || '').replace(/'/g, "\\'")}')">
+            data-product-id="${p.id}"
+            data-variant-idx="${vi}"
+            data-photo="${escapeHtml(v.photo || p.photo || '')}"
+            data-color="${escapeHtml(v.name || '')}">
           </span>`).join('')}
       </div>` : '';
 
@@ -185,6 +178,7 @@ function renderProducts() {
         data-id="${p.id}"
         style="animation-delay:${Math.min(i * 0.05, 0.4)}s"
         onclick="openDetailPanel(${p.id})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetailPanel(${p.id});}"
         role="button"
         tabindex="0"
         aria-label="${escapeHtml(p.name)}, ${fmtPrice(p.price)}${p.isSold ? ', sold out' : ''}">
@@ -230,6 +224,24 @@ function renderProducts() {
 
   const isAdmin = document.body.classList.contains("is-admin");
   if (isAdmin) addAdminControls();
+
+  // Attach swatch click listeners via delegation — avoids inline onclick photo URL injection
+  grid.addEventListener('click', _handleSwatchClick, { once: false });
+}
+
+/**
+ * Delegated handler for card swatch clicks.
+ * Reads product/variant data from data-* attributes instead of inline JS.
+ */
+function _handleSwatchClick(e) {
+  const swatch = e.target.closest('.card-swatch');
+  if (!swatch) return;
+  e.stopPropagation();
+  const productId  = parseInt(swatch.dataset.productId, 10);
+  const variantIdx = parseInt(swatch.dataset.variantIdx, 10);
+  const photo      = swatch.dataset.photo || '';
+  const color      = swatch.dataset.color || '';
+  swapVariant(e, productId, variantIdx, photo, color);
 }
 
 /**
@@ -326,15 +338,13 @@ function cycleCardImage(productId, dir) {
   }, 150);
 
   // Keep swatch state in sync if this image belongs to a variant
-  try {
-    if (p.variants) {
-      const variants = JSON.parse(p.variants);
-      const vi = variants.findIndex(v => v.photo === images[idx]);
-      if (vi > -1) {
-        card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === vi));
-      }
+  const variants = _parseJSON(p.variants, []);
+  if (variants.length) {
+    const vi = variants.findIndex(v => v.photo === images[idx]);
+    if (vi > -1) {
+      card.querySelectorAll('.card-swatch').forEach((s, i) => s.classList.toggle('active', i === vi));
     }
-  } catch (e) {}
+  }
 
   const counter = document.getElementById(`imgCounter${productId}`);
   if (counter) counter.textContent = `${idx + 1}/${images.length}`;
@@ -342,19 +352,47 @@ function cycleCardImage(productId, dir) {
 
 // ─── HERO GALLERY ─────────────────────────────────────────────────────────
 function populateHeroGallery() {
-  const available = products.filter(p => !p.isSold && p.photo);
-  const picks     = available.slice(0, 2);
-  if (picks.length < 2) return;
-
   const gallery = document.getElementById("heroGallery");
   if (!gallery) return;
 
-  gallery.innerHTML = picks.map(p => `
-    <div class="hero-img-wrap" onclick="openLightbox('${p.photo.replace(/'/g, "\\'")}')">
+  // Automatic selection: newest 2 unsold products that have a photo.
+  // Falls back gracefully to whatever is available — even 1 is fine.
+  const picks = products
+    .filter(p => !p.isSold && p.photo)
+    .sort((a, b) => {
+      if (!a.createdAt && !b.createdAt) return 0;
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    })
+    .slice(0, 2);
+
+  if (!picks.length) return;
+
+  gallery.innerHTML = picks.map(p => {
+    const isNew = isNewArrival(p);
+    return `
+    <div class="hero-img-wrap" data-product-id="${p.id}" role="button" tabindex="0"
+      aria-label="View ${escapeHtml(p.name)}, ${fmtPrice(p.price)}">
       <img src="${escapeHtml(p.photo)}" alt="${escapeHtml(p.name)}"
         onload="this.closest('.hero-img-wrap').classList.add('loaded')"
         loading="lazy">
-    </div>`).join("");
+      ${isNew ? `<span class="hero-badge">New Arrival</span>` : ''}
+      <div class="hero-img-overlay">
+        <p class="hero-overlay-name">${escapeHtml(p.name)}</p>
+        <p class="hero-overlay-price">${fmtPrice(p.price)}</p>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Click and keyboard → open detail panel for immediate purchase
+  gallery.querySelectorAll('.hero-img-wrap').forEach(wrap => {
+    const id = parseInt(wrap.dataset.productId, 10);
+    wrap.addEventListener('click', () => openDetailPanel(id));
+    wrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailPanel(id); }
+    });
+  });
 }
 
 // ─── LOAD PRODUCTS ────────────────────────────────────────────────────────

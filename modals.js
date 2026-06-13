@@ -20,7 +20,7 @@ function openSizeModal(id) {
   const chipsEl = document.getElementById("sizeModalChips");
   if (chipsEl) {
     chipsEl.innerHTML = sizes.map(s =>
-      `<button class="size-modal-chip"
+      `<button class="size-modal-chip" aria-pressed="false"
         onclick="selectModalSize(this,'${escapeHtml(s)}')">${escapeHtml(s)}</button>`
     ).join("");
   }
@@ -36,22 +36,33 @@ function openSizeModal(id) {
 }
 
 function selectModalSize(el, size) {
-  document.querySelectorAll(".size-modal-chip").forEach(c => c.classList.remove("selected"));
+  document.querySelectorAll(".size-modal-chip").forEach(c => {
+    c.classList.remove("selected");
+    c.setAttribute("aria-pressed", "false");
+  });
   el.classList.add("selected");
+  el.setAttribute("aria-pressed", "true");
   selectedSize = size;
+  announce(`Size ${size} selected`);
   const errEl = document.getElementById("sizeModalError");
   if (errEl) errEl.style.display = "none";
 }
 
 function closeSizeModal(e) {
-  // Allow close via: backdrop click, Cancel button, or string call
-  if (!e || e.target === document.getElementById("sizeModal") || typeof e === "string") {
-    document.getElementById("sizeModal")?.classList.remove("open");
-    pendingOrderId = null;
-    selectedSize = null;
-    const errEl = document.getElementById("sizeModalError");
-    if (errEl) errEl.style.display = "none";
+  // Allow close via backdrop click or Cancel button (event target check),
+  // or when called programmatically — use _closeSizeModalNow() for the latter.
+  if (!e || e.target === document.getElementById("sizeModal")) {
+    _closeSizeModalNow();
   }
+}
+
+/** Internal: unconditionally close the size modal and reset state. */
+function _closeSizeModalNow() {
+  document.getElementById("sizeModal")?.classList.remove("open");
+  pendingOrderId = null;
+  selectedSize = null;
+  const errEl = document.getElementById("sizeModalError");
+  if (errEl) errEl.style.display = "none";
 }
 
 /**
@@ -71,6 +82,7 @@ function _validateModalSize() {
     errEl.style.display = "block";
     errEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
+  announce("Please select a size before continuing.");
 
   const chipsEl = document.getElementById("sizeModalChips");
   if (chipsEl) {
@@ -85,14 +97,37 @@ function confirmOrder() {
   if (!_validateModalSize()) return;
   const p = products.find(x => x.id === pendingOrderId);
   if (!p) return;
-  closeSizeModal("");
-  sendWhatsApp(p, selectedSize);
+  _closeSizeModalNow();
+
+  const subtotal    = Number(p.price);
+  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const total       = subtotal + deliveryFee;
+
+  pendingOrderData = {
+    orderItems: [{ name: p.name, price: p.price, qty: 1, size: selectedSize, color: null }],
+    subtotal,
+    deliveryFee,
+    total
+  };
+  showOrderSummaryModal();
 }
 
 // ─── DIRECT ORDER (no sizes) ──────────────────────────────────────────────
 function directOrder(id) {
   const p = products.find(x => x.id === id);
-  if (p) sendWhatsApp(p, null);
+  if (!p) return;
+
+  const subtotal    = Number(p.price);
+  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const total       = subtotal + deliveryFee;
+
+  pendingOrderData = {
+    orderItems: [{ name: p.name, price: p.price, qty: 1, size: null, color: null }],
+    subtotal,
+    deliveryFee,
+    total
+  };
+  showOrderSummaryModal();
 }
 
 // ─── WHATSAPP ORDER ───────────────────────────────────────────────────────
@@ -132,16 +167,16 @@ function showOrderSummaryModal() {
             ${item.color ? `(${escapeHtml(item.color)})`        : ''}
             ×${item.qty}
           </span>
-          <span>KSh ${Number(item.price * item.qty).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>${fmtPrice(item.price * item.qty)}</span>
         </div>`).join('')}
     </div>
     <div class="order-totals">
-      <div><span>Subtotal</span><span>KSh ${Number(subtotal).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+      <div><span>Subtotal</span><span>${fmtPrice(subtotal)}</span></div>
       <div>
         <span>Delivery</span>
         <span>${deliveryFee === 0 ? 'FREE' : fmtPrice(deliveryFee)}</span>
       </div>
-      <div class="total"><span>Total</span><span>KSh ${Number(total).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+      <div class="total"><span>Total</span><span>${fmtPrice(total)}</span></div>
     </div>`;
 
   const summaryDiv = document.getElementById("orderSummaryContent");
@@ -154,6 +189,7 @@ function closeOrderSummaryModal() {
   document.getElementById("orderSummaryModal")?.classList.remove("open");
   const addressField = document.getElementById("deliveryAddress");
   if (addressField) addressField.value = "";
+  pendingOrderData = null;
 }
 
 function confirmOrderWithAddress() {
@@ -166,16 +202,15 @@ function confirmOrderWithAddress() {
       item.size  && `Size: *${item.size}*`,
       item.color && `Colour: *${item.color}*`
     ].filter(Boolean).join(', ');
-    return `• *${item.name}* ×${item.qty} — KSh ${Number(item.price * item.qty).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${details ? ` (${details})` : ''}`;
+    return `• *${item.name}* ×${item.qty} — ${fmtPrice(item.price * item.qty)}${details ? ` (${details})` : ''}`;
   });
 
-  let msg = `Hi! I'd like to order from Mohre Hub 🛍️\n\n${lines.join('\n')}\n\n*Total: KSh ${Number(total).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`;
+  let msg = `Hi! I'd like to order from Mohre Hub 🛍️\n\n${lines.join('\n')}\n\n*Total: ${fmtPrice(total)}*`;
   if (address) msg += `\n\nDelivery address: ${address}`;
   msg += `\n\nPlease share payment and delivery details.`;
 
   window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
   closeOrderSummaryModal();
-  showConfetti();
   vibrateOnAction();
 }
 

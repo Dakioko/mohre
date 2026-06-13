@@ -282,13 +282,14 @@ function addToCart(productId, size, color) {
 
   const itemCount = cart.reduce((s, c) => s + (c.qty || 1), 0);
   announce(`${p.name} added to cart. ${itemCount} item${itemCount > 1 ? 's' : ''} in cart.`);
+  showToast(`Added "${p.name}" to cart`);
   vibrateOnAction();
-  openCart();
+  setTimeout(() => openCart(), 350);
 }
 
 function removeFromCart(idx) {
-  // idx is a render-time index; resolve to a stable key before mutating
-  // in case a re-render has shifted positions since the button was painted.
+  // Resolve to a stable object reference before mutating so that rapid
+  // re-renders between click and execution can't shift the wrong item out.
   const item = cart[idx];
   if (!item) return;
   cart = cart.filter(c => c !== item);
@@ -322,6 +323,39 @@ function changeCartQty(idx, delta) {
   renderCartBody();
 }
 
+// ─── STABLE CART KEY ─────────────────────────────────────────────────────
+/**
+ * Build a stable string key for a cart item based on its product ID,
+ * size, and colour — the three fields that make an entry unique.
+ * Used to identify items in button handlers so render-time index shifts
+ * don't cause the wrong item to be mutated.
+ * @param {object} item
+ * @returns {string}
+ */
+function _cartKey(item) {
+  return `${item.id}|${item.size || ''}|${item.color || ''}`;
+}
+
+function removeFromCartByKey(key) {
+  cart = cart.filter(c => _cartKey(c) !== key);
+  saveCart();
+  updateCartBadge();
+  renderCartBody();
+}
+
+function changeCartQtyByKey(key, delta) {
+  const item = cart.find(c => _cartKey(c) === key);
+  if (!item) return;
+  if (delta < 0 && (item.qty || 1) <= 1) {
+    cart = cart.filter(c => c !== item);
+  } else {
+    item.qty = (item.qty || 1) + delta;
+  }
+  saveCart();
+  updateCartBadge();
+  renderCartBody();
+}
+
 // ─── RENDER CART BODY ─────────────────────────────────────────────────────
 function renderCartBody() {
   const body   = document.getElementById("cartBody");
@@ -346,8 +380,12 @@ function renderCartBody() {
 
   if (footer) footer.style.display = "flex";
 
-  body.innerHTML = cart.map((item, i) => `
-    <div class="cart-item">
+  body.innerHTML = cart.map((item, i) => {
+    // Build a stable key from the item's identifying fields so button
+    // clicks remain correct even if the array shifts between renders.
+    const key = _cartKey(item);
+    return `
+    <div class="cart-item" data-cart-key="${escapeHtml(key)}">
       <img class="cart-item-img"
         src="${escapeHtml(item.photo || '')}"
         alt="${escapeHtml(item.name)}"
@@ -361,21 +399,21 @@ function renderCartBody() {
         <p class="cart-item-price">${fmtPrice(item.price)}</p>
         <div class="cart-qty-row">
           <button class="cart-qty-btn${(item.qty || 1) <= 1 ? ' cart-qty-btn--remove' : ''}"
-            onclick="changeCartQty(${i},-1)"
+            onclick="changeCartQtyByKey('${escapeHtml(key)}',-1)"
             aria-label="${(item.qty || 1) <= 1 ? 'Remove item' : 'Decrease quantity'}">
             ${(item.qty || 1) <= 1 ? '✕' : '−'}
           </button>
           <span class="cart-qty-val">${item.qty || 1}</span>
-          <button class="cart-qty-btn" onclick="changeCartQty(${i},1)" aria-label="Increase quantity">+</button>
+          <button class="cart-qty-btn" onclick="changeCartQtyByKey('${escapeHtml(key)}',1)" aria-label="Increase quantity">+</button>
         </div>
       </div>
-      <button class="cart-item-remove" onclick="removeFromCart(${i})" aria-label="Remove ${escapeHtml(item.name)}">
+      <button class="cart-item-remove" onclick="removeFromCartByKey('${escapeHtml(key)}')" aria-label="Remove ${escapeHtml(item.name)}">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 
   updateCartWithDetails();
 }

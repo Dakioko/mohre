@@ -567,6 +567,65 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
 
 .hero-img-wrap.loaded img { opacity: 1; }
 
+/* Clickable hero cards */
+.hero-img-wrap {
+  cursor: pointer;
+}
+.hero-img-wrap:hover img {
+  transform: scale(1.03);
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+/* Gradient overlay + text */
+.hero-img-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 1rem 0.9rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.hero-img-wrap.loaded .hero-img-overlay { opacity: 1; }
+
+.hero-overlay-name {
+  font-family: var(--font-display);
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-overlay-price {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  margin: 0;
+}
+
+/* New Arrival badge on hero */
+.hero-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  background: #c9536a;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
 /* ─── MAIN SHOP ─────────────────────────────────────────────────────────── */
 main { max-width: 1400px; margin: 0 auto; }
 
@@ -762,6 +821,7 @@ body.dark-mode .product-card:hover { box-shadow: 0 20px 48px -12px rgba(0,0,0,0.
 }
 
 .card-badge.sold { background: rgba(0,0,0,0.55); }
+.card-badge.new-arrival { background: #c9536a; }
 
 /* ─── CARD WISHLIST HEART ──────────────────────────────────────────────── */
 .card-wishlist-btn {

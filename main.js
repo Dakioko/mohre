@@ -60,7 +60,7 @@ document.addEventListener("keydown", e => {
   // Escape — close any open overlay/panel/modal
   if (e.key === "Escape") {
     closeLightbox();
-    closeSizeModal("");
+    _closeSizeModalNow();
     closeLoginModal();
     closeGuaranteeModal();
     closeCart();

@@ -29,6 +29,18 @@ function escapeHtml(str) {
 }
 
 /**
+ * Safely parse a JSON string. Returns fallback on any error.
+ * Centralises the try/catch pattern used throughout the codebase.
+ * @param {string|null|undefined} str
+ * @param {*} fallback - value returned when str is falsy or invalid JSON
+ * @returns {*}
+ */
+function _parseJSON(str, fallback) {
+  if (!str) return fallback;
+  try { return JSON.parse(str); } catch (e) { return fallback; }
+}
+
+/**
  * Announce a message to screen readers via the ARIA live region.
  * @param {string} message
  */
@@ -83,20 +95,6 @@ function initDarkMode() {
       document.body.classList.add("dark-mode");
     }
   } catch (e) {}
-}
-
-// ─── CONFETTI ─────────────────────────────────────────────────────────────
-function showConfetti() {
-  for (let i = 0; i < 50; i++) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    confetti.style.left = Math.random() * 100 + '%';
-    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
-    confetti.style.animationDelay = Math.random() * 2 + 's';
-    confetti.style.animationDuration = 1 + Math.random() * 2 + 's';
-    document.body.appendChild(confetti);
-    setTimeout(() => confetti.remove(), 3000);
-  }
 }
 
 // ─── SWIPE TO CLOSE ───────────────────────────────────────────────────────
@@ -179,10 +177,12 @@ function openWhatsApp() {
 
 // ─── MOBILE TOUCH FEEDBACK ────────────────────────────────────────────────
 function initTouchFeedback() {
-  const selectors = '.cart-btn, .filter-btn, .card-order-btn, .card-cart-btn, .price-filter-trigger';
-  document.querySelectorAll(selectors).forEach(el => {
-    el.addEventListener('touchstart', () => { el.style.transform = 'scale(0.98)'; });
-    el.addEventListener('touchend', () => { el.style.transform = ''; });
-    el.addEventListener('touchcancel', () => { el.style.transform = ''; });
-  });
+  const selector = '.cart-btn, .filter-btn, .card-order-btn, .card-cart-btn, .price-filter-trigger';
+  const setScale = (e, val) => {
+    const el = e.target.closest(selector);
+    if (el) el.style.transform = val;
+  };
+  document.addEventListener('touchstart', e => setScale(e, 'scale(0.98)'), { passive: true });
+  document.addEventListener('touchend',   e => setScale(e, ''), { passive: true });
+  document.addEventListener('touchcancel', e => setScale(e, ''), { passive: true });
 }
