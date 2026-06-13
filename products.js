@@ -350,125 +350,6 @@ function cycleCardImage(productId, dir) {
   if (counter) counter.textContent = `${idx + 1}/${images.length}`;
 }
 
-// ─── HERO GALLERY SLIDESHOW ───────────────────────────────────────────────
-let _heroSlideTimer = null;
-let _heroCurrentSlide = 0;
-
-function populateHeroGallery() {
-  const gallery = document.getElementById("heroGallery");
-  if (!gallery) return;
-
-  // Newest 4 unsold products with photos — more variety in the slideshow
-  const picks = products
-    .filter(p => !p.isSold && p.photo)
-    .sort((a, b) => {
-      if (!a.createdAt && !b.createdAt) return 0;
-      if (!a.createdAt) return 1;
-      if (!b.createdAt) return -1;
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    })
-    .slice(0, 4);
-
-  if (!picks.length) return;
-
-  // Single-slide layout — gallery becomes a slider not a grid
-  gallery.classList.add('hero-gallery--slider');
-
-  gallery.innerHTML = `
-    <div class="hero-slides" id="heroSlides">
-      ${picks.map((p, i) => {
-        const isNew = isNewArrival(p);
-        return `
-        <div class="hero-slide${i === 0 ? ' active' : ''}"
-          data-product-id="${p.id}"
-          role="button"
-          tabindex="${i === 0 ? '0' : '-1'}"
-          aria-label="View ${escapeHtml(p.name)}, ${fmtPrice(p.price)}">
-          <img src="${escapeHtml(p.photo)}" alt="${escapeHtml(p.name)}"
-            onload="this.closest('.hero-slide').classList.add('loaded')"
-            loading="${i === 0 ? 'eager' : 'lazy'}">
-          ${isNew ? `<span class="hero-badge">New Arrival</span>` : ''}
-          <div class="hero-img-overlay">
-            <p class="hero-overlay-name">${escapeHtml(p.name)}</p>
-            <p class="hero-overlay-price">${fmtPrice(p.price)}</p>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-    ${picks.length > 1 ? `
-    <div class="hero-dots" role="tablist" aria-label="Slide indicators">
-      ${picks.map((_, i) => `
-        <button class="hero-dot${i === 0 ? ' active' : ''}"
-          role="tab"
-          aria-selected="${i === 0}"
-          aria-label="Slide ${i + 1}"
-          data-slide-idx="${i}">
-        </button>`).join('')}
-    </div>` : ''}
-  `;
-
-  // Click/keyboard → open detail panel
-  gallery.querySelectorAll('.hero-slide').forEach(slide => {
-    const id = parseInt(slide.dataset.productId, 10);
-    slide.addEventListener('click', () => openDetailPanel(id));
-    slide.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailPanel(id); }
-    });
-  });
-
-  // Dot navigation
-  gallery.querySelectorAll('.hero-dot').forEach(dot => {
-    dot.addEventListener('click', e => {
-      e.stopPropagation();
-      _heroGoToSlide(parseInt(dot.dataset.slideIdx, 10));
-      _heroResetTimer();
-    });
-  });
-
-  // Touch swipe
-  let _swipeStartX = 0;
-  gallery.addEventListener('touchstart', e => { _swipeStartX = e.touches[0].clientX; }, { passive: true });
-  gallery.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - _swipeStartX;
-    if (Math.abs(dx) < 40) return;
-    _heroGoToSlide(dx < 0
-      ? (_heroCurrentSlide + 1) % picks.length
-      : (_heroCurrentSlide - 1 + picks.length) % picks.length);
-    _heroResetTimer();
-  }, { passive: true });
-
-  // Auto-advance
-  _heroCurrentSlide = 0;
-  _heroResetTimer();
-}
-
-function _heroGoToSlide(idx) {
-  const gallery = document.getElementById("heroGallery");
-  if (!gallery) return;
-  const slides = gallery.querySelectorAll('.hero-slide');
-  const dots   = gallery.querySelectorAll('.hero-dot');
-  slides.forEach((s, i) => {
-    s.classList.toggle('active', i === idx);
-    s.tabIndex = i === idx ? 0 : -1;
-  });
-  dots.forEach((d, i) => {
-    d.classList.toggle('active', i === idx);
-    d.setAttribute('aria-selected', i === idx ? 'true' : 'false');
-  });
-  _heroCurrentSlide = idx;
-}
-
-function _heroResetTimer() {
-  const gallery = document.getElementById("heroGallery");
-  if (!gallery) return;
-  const count = gallery.querySelectorAll('.hero-slide').length;
-  if (count < 2) return;
-  clearInterval(_heroSlideTimer);
-  _heroSlideTimer = setInterval(() => {
-    _heroGoToSlide((_heroCurrentSlide + 1) % count);
-  }, 4500);
-}
-
 // ─── LOAD PRODUCTS ────────────────────────────────────────────────────────
 async function loadProducts() {
   showSkeletons(6);
@@ -476,7 +357,6 @@ async function loadProducts() {
     products = await apiGet();
     setTimeout(reconcileCart, 0); // defer so UI renders before toast fires
     renderProducts();
-    populateHeroGallery();
     checkProductParam();
     applySavedFilters();
   } catch (e) {

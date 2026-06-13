@@ -1,3 +1,9 @@
+// ─── HERO CATEGORY LINKS ──────────────────────────────────────────────────
+function goToCategory(cat) {
+  const btn = document.querySelector(`.filter-btn[data-category="${cat}"]`);
+  setFilter(cat, btn);
+}
+
 // ─── CATEGORY FILTER ──────────────────────────────────────────────────────
 function setFilter(cat, btn) {
   document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
