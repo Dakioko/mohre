@@ -485,24 +485,51 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
 
 /* ─── HERO ───────────────────────────────────────────────────────────────── */
 .hero {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  padding: 1.75rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  position: relative;
+  display: flex;
   align-items: center;
+  height: 380px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #1a1815 0%, #2e2924 45%, #5a4f42 100%);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
   .hero {
-    grid-template-columns: 1fr 1fr;
+    height: 480px;
     padding: 2.5rem 3rem;
-    gap: 4rem;
   }
 }
 
-.hero-text { display: flex; flex-direction: column; gap: 0.75rem; }
+/* Add this class once a banner image is available, e.g.:
+   <header class="hero hero--with-image" style="background-image: url('images/hero-banner.jpg');"> */
+.hero--with-image {
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(26, 24, 21, 0.55) 0%,
+    rgba(26, 24, 21, 0.3) 45%,
+    rgba(26, 24, 21, 0.05) 100%
+  );
+  z-index: 0;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+}
 
 .hero-eyebrow {
   font-family: var(--font-body);
@@ -510,16 +537,16 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .hero-text h1 {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-size: clamp(2.25rem, 6vw, 3.6rem);
   font-weight: 300;
   line-height: 1.15;
   letter-spacing: -0.01em;
-  color: var(--primary);
+  color: #fff;
 }
 
 .hero-text h1 span { font-style: italic; color: var(--accent); }
@@ -537,61 +564,12 @@ body.dark-mode .mobile-search-overlay { background: color-mix(in srgb, var(--bg)
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 2px;
+  margin-top: 0.5rem;
   transition: background 0.2s, transform 0.15s;
 }
 
 .hero-btn:hover { background: var(--accent); transform: translateY(-1px); }
 
-.hero-categories {
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-cat-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  background: none;
-  border: none;
-  border-top: 1px solid var(--border);
-  padding: 0.55rem 0;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--primary);
-  cursor: pointer;
-  text-align: left;
-  transition: color 0.15s;
-}
-
-.hero-categories .hero-cat-link:last-of-type { border-bottom: 1px solid var(--border); }
-
-.hero-cat-link svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
-}
-
-.hero-cat-link:hover { color: var(--accent); }
-.hero-cat-link:hover svg { transform: translateX(3px); }
-
-.hero-tagline {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.6;
-  margin-top: 0.75rem;
-}
-
-/* Explore Collection button — desktop only inside hero-text, mobile below categories */
-.hero-btn--desktop { display: none; }
-.hero-btn--mobile  { display: block; align-self: stretch; text-align: center; margin-top: 0.25rem; }
-
-@media (min-width: 768px) {
-  .hero-btn--desktop { display: inline-flex; }
-  .hero-btn--mobile  { display: none; }
-}
 
 /* ─── MAIN SHOP ─────────────────────────────────────────────────────────── */
 main { max-width: 1400px; margin: 0 auto; }
