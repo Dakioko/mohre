@@ -1635,7 +1635,7 @@ body.dark-mode .detail-panel { box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4); }
     height: auto;
     flex: none;
     border-radius: 0;
-    aspect-ratio: 3/4;
+    aspect-ratio: 3/2;
     width: 100vw;
     margin: 0;
   }
