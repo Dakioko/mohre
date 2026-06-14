@@ -117,6 +117,9 @@
 
     .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
 
+    /* Trust badges are mobile-only */
+    .hero-trust-badges { display: none; }
+
     /* Carousel panel */
     .hero-carousel-container {
       position: relative;
@@ -257,8 +260,44 @@
       .hero-split h1 { font-size: 1.8rem; }
 
       .hero-split .hero-description {
-        font-size: 0.85rem;
-        margin-bottom: 20px;
+        display: none;
+      }
+
+      /* Trust badges strip */
+      .hero-trust-badges {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        margin-top: 18px;
+        width: 100%;
+      }
+
+      .hero-trust-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        flex: 1;
+        padding: 0 4px;
+        border-right: 1px solid rgba(140,126,108,0.2);
+      }
+
+      .hero-trust-badge:last-child {
+        border-right: none;
+      }
+
+      .hero-trust-badge .badge-icon {
+        color: #8c7e6c;
+        line-height: 1;
+      }
+
+      .hero-trust-badge .badge-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #767676;
+        text-align: center;
         line-height: 1.4;
       }
 
@@ -395,6 +434,39 @@
     <div class="social-proof">
       <span class="stars">★★★★★</span>
       <span>Highly rated by our customers</span>
+    </div>
+
+    <!-- Trust badges: mobile only -->
+    <div class="hero-trust-badges">
+      <div class="hero-trust-badge">
+        <span class="badge-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </span>
+        <span class="badge-label">Authenticated</span>
+      </div>
+      <div class="hero-trust-badge">
+        <span class="badge-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+        </span>
+        <span class="badge-label">WhatsApp Support</span>
+      </div>
+      <div class="hero-trust-badge">
+        <span class="badge-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </span>
+        <span class="badge-label">Nairobi Delivery</span>
+      </div>
     </div>
   </section>
 

@@ -374,6 +374,7 @@ async function loadProducts() {
     products = await apiGet();
     setTimeout(reconcileCart, 0); // defer so UI renders before toast fires
     renderProducts();
+    if (typeof initHeroCarousel === 'function') initHeroCarousel(products);
     checkProductParam();
     applySavedFilters();
   } catch (e) {
