@@ -161,10 +161,15 @@ function initBackToTop() {
 // ─── SCROLL TO SHOP ───────────────────────────────────────────────────────
 function scrollToShop() {
   const el = document.getElementById("mainContent");
-  const header = document.querySelector(".global-sticky-header");
+  const header = document.getElementById("mainContent");
+  const stickyHeader = document.querySelector(".global-sticky-header");
+  const mobileSearchBar = document.getElementById("mobileSearchBar");
   if (!el) return;
+  const stickyH = stickyHeader ? stickyHeader.offsetHeight : 60;
+  const searchBarH = (mobileSearchBar && mobileSearchBar.offsetParent !== null)
+    ? mobileSearchBar.offsetHeight : 0;
   const offset = el.getBoundingClientRect().top + window.pageYOffset
-    - (header ? header.offsetHeight : 80) - 10;
+    - stickyH - searchBarH - 10;
   window.scrollTo({ top: offset, behavior: "smooth" });
 }
 
