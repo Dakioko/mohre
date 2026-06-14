@@ -117,8 +117,9 @@
 
     .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
 
-    /* Trust badges are mobile-only */
-    .hero-trust-badges { display: none; }
+    .hero-overlay-text { display: none; }
+    /* Persistent mobile search bar is mobile-only */
+    .mobile-search-bar { display: none; }
 
     /* Carousel panel */
     .hero-carousel-container {
@@ -236,69 +237,126 @@
     @media (max-width: 768px) {
       .hero-split {
         grid-template-columns: 1fr;
-        height: calc(100vh - 120px);
-        min-height: 560px;
+        grid-template-rows: 1fr auto;
+        height: calc(100vh - 108px);
+        min-height: 480px;
       }
 
-      /* Image on top on mobile */
+      /* Carousel fills most of the hero */
       .hero-carousel-container {
         grid-row: 1;
-        height: 40vh;
-        min-height: 240px;
+        height: 100%;
+        min-height: 340px;
+        position: relative;
       }
 
+      /* Hide the left text column entirely on mobile */
       .hero-split .hero-content {
-        grid-row: 2;
-        padding: 30px 6%;
-        text-align: center;
-        align-items: center;
-        background-color: #fcfbfa;
-        justify-content: flex-start;
-      }
-
-      .hero-split .tagline { font-size: 0.65rem; margin-bottom: 8px; }
-      .hero-split h1 { font-size: 1.8rem; }
-
-      .hero-split .hero-description {
         display: none;
       }
 
-      /* Trust badges strip */
-      .hero-trust-badges {
-        display: flex;
-        justify-content: center;
-        gap: 0;
-        margin-top: 18px;
-        width: 100%;
+      /* Hide old mobile search toggle icon — replaced by persistent bar */
+      .mobile-search-toggle { display: none !important; }
+      .mobile-search-overlay { display: none !important; }
+
+      /* ── Persistent mobile search bar ── */
+      .mobile-search-bar {
+        display: block;
+        position: sticky;
+        top: 60px; /* sits flush below the nav */
+        z-index: 99;
+        background: #fff;
+        border-bottom: 1px solid rgba(140,126,108,0.18);
+        padding: 8px 16px;
       }
 
-      .hero-trust-badge {
+      .mobile-search-bar-inner {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border: 1px solid rgba(140,126,108,0.2);
+        border-radius: 4px;
+        padding: 0 12px;
+        height: 40px;
+        gap: 8px;
+      }
+
+      .mobile-search-bar-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.82rem;
+        color: #1a1a1a;
+        outline: none;
+        letter-spacing: 0.3px;
+      }
+
+      .mobile-search-bar-input::placeholder {
+        color: #a09890;
+        font-size: 0.8rem;
+      }
+
+      .mobile-search-bar-icon {
+        width: 16px;
+        height: 16px;
+        color: #8c7e6c;
+        flex-shrink: 0;
+      }
+
+      /* Overlay text on top of the carousel image */
+      .hero-overlay-text {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 5px;
-        flex: 1;
-        padding: 0 4px;
-        border-right: 1px solid rgba(140,126,108,0.2);
+        position: absolute;
+        bottom: 52px;
+        left: 0; right: 0;
+        z-index: 6;
+        padding: 0 24px;
+        pointer-events: none;
       }
 
-      .hero-trust-badge:last-child {
-        border-right: none;
-      }
-
-      .hero-trust-badge .badge-icon {
-        color: #8c7e6c;
-        line-height: 1;
-      }
-
-      .hero-trust-badge .badge-label {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.55rem;
+      .hero-overlay-text .overlay-tagline {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.6rem;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
-        color: #767676;
-        text-align: center;
-        line-height: 1.4;
+        letter-spacing: 4px;
+        color: rgba(255,255,255,0.75);
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+
+      .hero-overlay-text .overlay-heading {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        line-height: 1.15;
+        font-weight: 400;
+        color: #fff;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.35);
+      }
+
+      .hero-overlay-text .overlay-heading span {
+        font-style: italic;
+        color: rgba(255,255,255,0.85);
+      }
+
+      /* Gradient scrim so text stays legible over any image */
+      .hero-carousel-container::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0,0,0,0.55) 0%,
+          rgba(0,0,0,0.15) 45%,
+          transparent 70%
+        );
+        z-index: 3;
+        pointer-events: none;
+      }
+
+      .hero-split .hero-description {
+        display: none;
       }
 
       .hero-split .cta-group {
@@ -371,15 +429,6 @@
           aria-label="Search products" />
       </div>
 
-      <!-- Mobile search toggle -->
-      <button type="button" class="icon-btn mobile-search-toggle"
-        onclick="openMobileSearch()" aria-label="Search">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-      </button>
-
       <!-- Wishlist button -->
       <button type="button" class="wishlist-nav-btn" onclick="openWishlist()" aria-label="View wishlist">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
@@ -398,31 +447,28 @@
         <span class="cart-count" id="cartCount" aria-live="polite">0</span>
       </button>
     </div><!-- /.nav-actions -->
-
-    <!-- Mobile search bar (inline, replaces nav actions) -->
-    <div class="mobile-search-overlay" id="mobileSearchOverlay">
-      <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
-      <input type="text" class="search-input" placeholder="Search the edit…"
-        id="mobileSearch"
-        oninput="handleSearch(this.value)"
-        aria-label="Search products" />
-      <button type="button" class="icon-btn" onclick="closeMobileSearch()" aria-label="Close search">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
   </nav>
 </div><!-- /.global-sticky-header -->
+
+<!-- Persistent mobile search bar (below nav, mobile only) -->
+<div class="mobile-search-bar" id="mobileSearchBar">
+  <div class="mobile-search-bar-inner">
+    <input type="text" class="mobile-search-bar-input"
+      id="mobileSearch"
+      placeholder="Search the edit…"
+      oninput="handleSearch(this.value)"
+      aria-label="Search products" />
+    <svg class="mobile-search-bar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+  </div>
+</div>
 
 <!-- ─── HERO ────────────────────────────────────────────────────────────── -->
 <main class="hero-split">
 
-  <!-- Left Column: Content -->
+  <!-- Left Column: Content (desktop only) -->
   <section class="hero-content">
     <span class="tagline">New arrivals weekly</span>
     <div class="text-frame">
@@ -435,48 +481,25 @@
       <span class="stars">★★★★★</span>
       <span>Highly rated by our customers</span>
     </div>
-
-    <!-- Trust badges: mobile only -->
-    <div class="hero-trust-badges">
-      <div class="hero-trust-badge">
-        <span class="badge-icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-          </svg>
-        </span>
-        <span class="badge-label">Authenticated</span>
-      </div>
-      <div class="hero-trust-badge">
-        <span class="badge-icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-          </svg>
-        </span>
-        <span class="badge-label">WhatsApp Support</span>
-      </div>
-      <div class="hero-trust-badge">
-        <span class="badge-icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-        </span>
-        <span class="badge-label">Nairobi Delivery</span>
-      </div>
-    </div>
   </section>
 
   <!-- Right Column: Carousel -->
   <section class="hero-carousel-container">
     <div class="slide-wrapper" id="heroSlideWrapper"></div>
+
+    <!-- Overlay text: mobile only -->
+    <div class="hero-overlay-text">
+      <span class="overlay-tagline">New arrivals weekly</span>
+      <h1 class="overlay-heading">Shop Easily.<br>Dress <span>Smarter</span>.</h1>
+    </div>
+
     <div class="carousel-indicators" id="heroIndicators"></div>
   </section>
 
 </main>
+
+
+</div>
 
 
 <!-- ─── CATEGORY FILTER BAR ──────────────────────────────────────────── -->
