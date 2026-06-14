@@ -116,6 +116,10 @@
     }
 
     .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
+    /* Mobile-only elements hidden on desktop */
+    .mobile-search-bar { display: none; }
+    .hero-overlay-text { display: none; }
+    .detail-header-summary { display: none; }
 
     /* Carousel panel */
     .hero-carousel-container {
@@ -231,66 +235,90 @@
     }
 
     @media (max-width: 768px) {
+      /* ── Hero ── */
       .hero-split {
         grid-template-columns: 1fr;
-        height: calc(100vh - 120px);
-        min-height: 560px;
+        grid-template-rows: 1fr;
+        height: 55vw;
+        min-height: 300px;
+        max-height: 420px;
       }
 
-      /* Image on top on mobile */
       .hero-carousel-container {
         grid-row: 1;
-        height: 40vh;
-        min-height: 240px;
+        height: 100%;
+        min-height: unset;
+        position: relative;
       }
 
-      .hero-split .hero-content {
-        grid-row: 2;
-        padding: 30px 6%;
-        text-align: center;
-        align-items: center;
-        background-color: #fcfbfa;
-        justify-content: flex-start;
-      }
-
-      .hero-split .tagline { font-size: 0.65rem; margin-bottom: 8px; }
-      .hero-split h1 { font-size: 1.8rem; }
-
-      .hero-split .hero-description {
-        font-size: 0.85rem;
-        margin-bottom: 20px;
-        line-height: 1.4;
-      }
-
-      .hero-split .cta-group {
-        flex-direction: row;
-        gap: 12px;
-        width: 100%;
-        margin-bottom: 0;
-        justify-content: center;
-      }
-
-      .hero-split .btn-hero-primary,
-      .hero-split .btn-hero-secondary {
-        flex: 1;
-        text-align: center;
-        padding: 12px 10px;
-        font-size: 0.7rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-      }
-
-      .hero-split .btn-hero-secondary {
-        border: 1px solid #1a1a1a;
-      }
-
+      /* Hide desktop text column */
+      .hero-split .hero-content { display: none; }
+      .hero-split .hero-description { display: none; }
       .hero-split .social-proof { display: none; }
       .hero-split .cta-group { display: none; }
 
+      /* Gradient scrim over carousel */
+      .hero-carousel-container::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 45%, transparent 70%);
+        z-index: 3;
+        pointer-events: none;
+      }
+
+      /* Overlay text */
+      .hero-overlay-text {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        bottom: 42px;
+        left: 0; right: 0;
+        z-index: 6;
+        padding: 0 20px;
+        pointer-events: none;
+      }
+
+      .hero-overlay-text .overlay-heading {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2rem;
+        line-height: 1.15;
+        font-weight: 400;
+        color: #fff;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.35);
+        margin: 0;
+      }
+
+      .hero-overlay-text .overlay-heading span {
+        font-style: italic;
+        color: rgba(255,255,255,0.85);
+      }
+
+      .overlay-cta {
+        margin-top: 14px;
+        padding: 10px 20px;
+        background: #1a1a1a;
+        border: 1px solid #1a1a1a;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 500;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: background 0.3s;
+        align-self: flex-start;
+      }
+      .overlay-cta:active { background: #333; }
+
+      /* Desktop-only elements hidden */
+      .hero-overlay-text + * { margin-top: 0; }
+      .hero-trust-badges { display: none; }
+
+      /* Carousel indicators */
       .hero-carousel-container .carousel-indicators {
-        left: 50%; transform: translateX(-50%); bottom: 15px; gap: 6px;
+        left: 50%; transform: translateX(-50%); bottom: 15px; gap: 6px; z-index: 7;
       }
       .hero-carousel-container .indicator-dash { width: 25px; }
       .hero-carousel-container .promo-badge {
@@ -298,6 +326,141 @@
       }
       .hero-carousel-container .promo-badge .percentage { font-size: 1.1rem; }
       .hero-carousel-container .promo-badge .text { font-size: 0.45rem; }
+
+      /* ── Search bar ── */
+      .mobile-search-toggle { display: none !important; }
+      .mobile-search-overlay { display: none !important; }
+
+      .mobile-search-bar {
+        display: block;
+        position: sticky;
+        top: 60px;
+        z-index: 99;
+        background: #fff;
+        border-bottom: 1px solid rgba(140,126,108,0.18);
+        padding: 8px 16px;
+      }
+
+      .mobile-search-bar-inner {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border: 1px solid rgba(140,126,108,0.2);
+        border-radius: 4px;
+        padding: 0 12px;
+        height: 40px;
+        gap: 8px;
+      }
+
+      .mobile-search-bar-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.82rem;
+        color: #1a1a1a;
+        outline: none;
+        letter-spacing: 0.3px;
+      }
+
+      .mobile-search-bar-input::placeholder { color: #a09890; font-size: 0.8rem; }
+      .mobile-search-bar-icon { width: 16px; height: 16px; color: #8c7e6c; flex-shrink: 0; }
+
+      /* ── Sticky stack ── */
+      .filter-bar-wrapper { top: calc(60px + 56px); }
+      .section-header { top: calc(60px + 56px + 50px); }
+
+      /* ── Product grid: 2 columns ── */
+      .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem;
+        padding: 0 0.75rem 3rem;
+      }
+
+      /* ── Detail panel mobile enhancements ── */
+      .detail-header-summary {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        overflow: hidden;
+        padding: 0 0.5rem;
+      }
+
+      .detail-header-name {
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        font-weight: 400;
+        color: var(--primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+
+      .detail-header-price { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+
+      .detail-sticky-bar {
+        display: flex !important;
+        position: sticky;
+        bottom: 0;
+        gap: 0.75rem;
+        padding: 0.85rem 1.25rem;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        z-index: 10;
+        flex-shrink: 0;
+      }
+
+      .sticky-bar-buynow {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.85rem;
+        background: #25d366;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .sticky-bar-addcart {
+        flex: 1;
+        padding: 0.85rem;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .sticky-bar-buynow:active, .sticky-bar-addcart:active { opacity: 0.85; }
+      .detail-actions { display: none; }
+      .detail-info-col { padding-bottom: 1.5rem; }
+
+      /* Detail image: full width, shorter */
+      .detail-main-img-wrap {
+        height: auto;
+        flex: none;
+        border-radius: 0;
+        aspect-ratio: 3/2;
+        width: 100vw;
+        margin: 0;
+      }
+      .detail-main-img {
+        object-fit: cover;
+        object-position: center top;
+        width: 100%;
+        height: 100%;
+      }
     }
   </style>
 </head>
@@ -360,25 +523,23 @@
       </button>
     </div><!-- /.nav-actions -->
 
-    <!-- Mobile search bar (inline, replaces nav actions) -->
-    <div class="mobile-search-overlay" id="mobileSearchOverlay">
-      <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
-      <input type="text" class="search-input" placeholder="Search the edit…"
-        id="mobileSearch"
-        oninput="handleSearch(this.value)"
-        aria-label="Search products" />
-      <button type="button" class="icon-btn" onclick="closeMobileSearch()" aria-label="Close search">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
   </nav>
 </div><!-- /.global-sticky-header -->
+
+<!-- Persistent mobile search bar -->
+<div class="mobile-search-bar" id="mobileSearchBar">
+  <div class="mobile-search-bar-inner">
+    <input type="text" class="mobile-search-bar-input"
+      id="mobileSearch"
+      placeholder="Search the edit…"
+      oninput="handleSearch(this.value)"
+      aria-label="Search products" />
+    <svg class="mobile-search-bar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+  </div>
+</div>
 
 <!-- ─── HERO ────────────────────────────────────────────────────────────── -->
 <main class="hero-split">
@@ -401,6 +562,11 @@
   <!-- Right Column: Carousel -->
   <section class="hero-carousel-container">
     <div class="slide-wrapper" id="heroSlideWrapper"></div>
+    <!-- Overlay text: mobile only -->
+    <div class="hero-overlay-text">
+      <h1 class="overlay-heading">Shop Easily.<br>Dress <span>Smarter</span>.</h1>
+      <button class="overlay-cta" onclick="goToCategory('New')">Shop New Arrivals</button>
+    </div>
     <div class="carousel-indicators" id="heroIndicators"></div>
   </section>
 
