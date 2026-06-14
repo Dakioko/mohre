@@ -77,7 +77,7 @@ function clearCategoryFilter() {
 // ─── PERSIST / RESTORE FILTER PREFERENCES ────────────────────────────────
 function saveFilterPreference() {
   try {
-    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter, savedAt: Date.now() }));
+    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter, sort: currentSort, savedAt: Date.now() }));
   } catch (e) {}
 }
 
@@ -90,6 +90,11 @@ function applySavedFilters() {
     if (age > 24 * 60 * 60 * 1000) {
       localStorage.removeItem('filterPreference');
       return;
+    }
+    if (prefs.sort) {
+      currentSort = prefs.sort;
+      const sortEl = document.getElementById("sortSelect");
+      if (sortEl) sortEl.value = currentSort;
     }
     if (prefs.category && prefs.category !== 'All') {
       const filterBtn = document.querySelector(`.filter-btn[data-category="${prefs.category}"]`);

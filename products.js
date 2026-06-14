@@ -11,17 +11,19 @@ function _cardImageList(p) {
   const images = [];
   const variants = _parseJSON(p.variants, []);
   const extras   = _parseJSON(p.photos,   []);
+  const _add = src => { if (src && !images.includes(src)) images.push(src); };
 
-  // Use primary photo if set; otherwise fall back to the first variant photo
-  // so products with colour variants don't need a redundant duplicate image.
+  // Primary photo first; if absent fall back to first variant photo
   if (p.photo) {
-    images.push(p.photo);
+    _add(p.photo);
   } else if (variants.length && variants[0].photo) {
-    images.push(variants[0].photo);
+    _add(variants[0].photo);
   }
 
-  extras.forEach(src => { if (src && !images.includes(src)) images.push(src); });
-  variants.forEach(v => { if (v.photo && !images.includes(v.photo)) images.push(v.photo); });
+  // Extra photos and variant photos — deduplication prevents any shared
+  // image (e.g. primary == a variant photo) from appearing twice on swipe.
+  extras.forEach(src => _add(src));
+  variants.forEach(v => _add(v.photo));
 
   return images;
 }
@@ -92,6 +94,14 @@ function renderProducts(forceRebuild = false) {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
 
+  // Fade out briefly on filter/sort change for a polished transition
+  grid.classList.add('is-filtering');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      grid.classList.remove('is-filtering');
+    });
+  });
+
   const filtered = getFiltered();
   const searchVal =
     document.getElementById("desktopSearch")?.value.trim() ||
@@ -146,6 +156,7 @@ function renderProducts(forceRebuild = false) {
     const showNewBadge = isNewArrival(p);
     const images = _cardImageList(p);
     const hasMultipleImages = images.length > 1;
+    const primaryImage = images[0] || '';
 
     const navArrowsHTML = hasMultipleImages ? `
       <button class="card-nav-arrow card-nav-prev" aria-label="Previous photo"
@@ -180,8 +191,8 @@ function renderProducts(forceRebuild = false) {
             </svg>
             <span>Mohre Hub</span>
           </div>
-          ${p.photo ? `<img class="card-img" id="img${p.id}"
-            src="${escapeHtml(p.photo)}"
+          ${primaryImage ? `<img class="card-img" id="img${p.id}"
+            src="${escapeHtml(primaryImage)}"
             alt="${escapeHtml(p.name)}"
             loading="lazy"
             onload="this.closest('.card-img-wrap').classList.add('img-loaded')"

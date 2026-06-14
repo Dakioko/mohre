@@ -249,14 +249,18 @@ function openDetailPanel(id) {
 
   document.getElementById("detailPanel")?.classList.add("open");
   document.getElementById("detailOverlay")?.classList.add("open");
+  _savedScrollY = window.scrollY;
   lockScroll();
 }
 
 // ─── CLOSE DETAIL PANEL ───────────────────────────────────────────────────
+let _savedScrollY = 0;
+
 function closeDetailPanel() {
   document.getElementById("detailPanel")?.classList.remove("open");
   document.getElementById("detailOverlay")?.classList.remove("open");
   unlockScroll();
+  window.scrollTo({ top: _savedScrollY, behavior: 'instant' });
   detailProductId = null;
 }
 
