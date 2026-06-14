@@ -238,15 +238,16 @@
       .hero-split {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
-        height: calc(100vh - 120px);
-        min-height: 560px;
+        height: 55vw;
+        min-height: 300px;
+        max-height: 420px;
       }
 
       /* Carousel fills most of the hero */
       .hero-carousel-container {
         grid-row: 1;
         height: 100%;
-        min-height: 340px;
+        min-height: unset;
         position: relative;
       }
 
@@ -343,6 +344,27 @@
       .hero-overlay-text .overlay-heading span {
         font-style: italic;
         color: rgba(255,255,255,0.85);
+      }
+
+      .overlay-cta {
+        margin-top: 16px;
+        padding: 11px 22px;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.7);
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 500;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: background 0.3s, border-color 0.3s;
+        align-self: flex-start;
+      }
+
+      .overlay-cta:active {
+        background: rgba(255,255,255,0.15);
       }
 
       /* Gradient scrim so text stays legible over any image */
@@ -494,8 +516,8 @@
 
     <!-- Overlay text: mobile only -->
     <div class="hero-overlay-text">
-      <span class="overlay-tagline">New arrivals weekly</span>
       <h1 class="overlay-heading">Shop Easily.<br>Dress <span>Smarter</span>.</h1>
+      <button class="overlay-cta" onclick="goToCategory('New')">Shop New Arrivals</button>
     </div>
 
     <div class="carousel-indicators" id="heroIndicators"></div>
