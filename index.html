@@ -54,7 +54,7 @@
 
     .hero-split h1 span {
       font-style: italic;
-      color: #8c7e6c;
+      color: #b33939;
       font-weight: 400;
     }
 
@@ -115,7 +115,7 @@
       color: #767676;
     }
 
-    .hero-split .stars { color: #bc9f75; letter-spacing: 2px; }
+    .hero-split .stars { color: #b33939; letter-spacing: 2px; }
     /* Mobile-only elements hidden on desktop */
     .mobile-search-bar { display: none; }
     .hero-overlay-text { display: none; }
@@ -137,7 +137,7 @@
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      object-position: center center;
+      object-position: center top;
       opacity: 0;
       transform: scale(1.04);
       transition: opacity 0.9s ease-in-out, transform 1.4s cubic-bezier(0.25,1,0.5,1);
@@ -156,36 +156,13 @@
 
     .hero-carousel-container .indicator-dash {
       width: 40px; height: 2px;
-      background-color: rgba(255,255,255,0.35);
+      background-color: rgba(255,255,255,0.5);
       cursor: pointer;
       transition: background-color 0.3s;
     }
 
     .hero-carousel-container .indicator-dash.active {
       background-color: #fff;
-    }
-
-    .hero-carousel-container .promo-badge {
-      position: absolute;
-      bottom: 30px; right: 40px;
-      background-color: #fcfbfa;
-      border-radius: 50%;
-      width: 85px; height: 85px;
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.04);
-      z-index: 5;
-    }
-
-    .hero-carousel-container .promo-badge .percentage {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.35rem; color: #1a1a1a; line-height: 1;
-    }
-
-    .hero-carousel-container .promo-badge .text {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.55rem; text-transform: uppercase;
-      letter-spacing: 1px; color: #767676; margin-top: 3px;
     }
 
     /* ─── FILTER BAR: refined underline style ───────────────────────────── */
@@ -321,11 +298,7 @@
         left: 50%; transform: translateX(-50%); bottom: 15px; gap: 6px; z-index: 7;
       }
       .hero-carousel-container .indicator-dash { width: 25px; }
-      .hero-carousel-container .promo-badge {
-        width: 65px; height: 65px; right: 15px; bottom: 15px;
-      }
-      .hero-carousel-container .promo-badge .percentage { font-size: 1.1rem; }
-      .hero-carousel-container .promo-badge .text { font-size: 0.45rem; }
+      
 
       /* ── Search bar ── */
       .mobile-search-toggle { display: none !important; }
