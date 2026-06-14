@@ -11,7 +11,6 @@ function setFilter(cat, btn) {
   currentFilter = cat;
   renderProducts();
   scrollToShop();
-  updateActiveFiltersBar();
   saveFilterPreference();
 }
 
@@ -58,7 +57,6 @@ function clearSearch() {
   const bar = document.getElementById("searchInfoBar");
   if (bar) bar.style.display = "none";
   renderProducts();
-  updateActiveFiltersBar();
   saveFilterPreference();
 }
 
@@ -69,36 +67,6 @@ function resetViewToShop() {
 
 function clearCategoryFilter() {
   setFilter("All", document.querySelector('.filter-btn[data-category="All"]'));
-}
-
-// ─── ACTIVE FILTERS BAR ───────────────────────────────────────────────────
-function updateActiveFiltersBar() {
-  const bar = document.getElementById("activeFiltersBar");
-  if (!bar) return;
-  const chips = [];
-
-  if (currentFilter !== "All") {
-    chips.push(`
-      <span class="filter-chip" onclick="clearCategoryFilter()">
-        ${escapeHtml(currentFilter)}
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </span>`);
-  }
-
-  if (currentSearch) {
-    chips.push(`
-      <span class="filter-chip" onclick="clearSearch()">
-        "${escapeHtml(currentSearch)}"
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </span>`);
-  }
-
-  bar.innerHTML = chips.join('');
-  bar.classList.toggle("visible", chips.length > 0);
 }
 
 // ─── PERSIST / RESTORE FILTER PREFERENCES ────────────────────────────────
