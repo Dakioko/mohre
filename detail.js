@@ -169,7 +169,7 @@ function openDetailPanel(id) {
             </svg>
           </button>
           <div class="detail-accordion-body">
-            <p>Ships across Kenya. Delivery details confirmed over WhatsApp after ordering. Orders typically dispatched within 1–2 business days. Free delivery on orders over KSh 5,000.</p>
+            <p>Ships across Kenya. Delivery details confirmed over WhatsApp after ordering. Orders typically dispatched within 1–2 business days. Free delivery on orders over ${fmtPrice(DELIVERY_FREE_THRESHOLD)}.</p>
           </div>
         </div>
 
@@ -220,7 +220,6 @@ function openDetailPanel(id) {
   }
 
   // ── Mobile enhancements ──────────────────────────────────────────────────
-  const isMobile = window.innerWidth < 768;
 
   // Mini name + price in header
   const headerName  = document.getElementById("detailHeaderName");
@@ -228,11 +227,12 @@ function openDetailPanel(id) {
   if (headerName)  headerName.textContent  = p.name;
   if (headerPrice) headerPrice.textContent = fmtPrice(p.price);
 
-  // Sticky bottom CTA bar
+  // Sticky bottom CTA bar — CSS controls show/hide by breakpoint.
+  // JS only populates the buttons; never sets display inline so CSS wins.
   const stickyBar = document.getElementById("detailStickyBar");
   if (stickyBar) {
-    if (isMobile && !p.isSold) {
-      stickyBar.style.display = "flex";
+    if (!p.isSold) {
+      stickyBar.style.display = "";  // clear any previous inline override
       stickyBar.innerHTML = `
         <button class="sticky-bar-buynow" onclick="detailOrder()">
           <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
@@ -243,19 +243,20 @@ function openDetailPanel(id) {
         <button class="sticky-bar-addcart" onclick="detailSaveToCart()">Add to Cart</button>`;
     } else {
       stickyBar.style.display = "none";
+      stickyBar.innerHTML = "";
     }
   }
 
   document.getElementById("detailPanel")?.classList.add("open");
   document.getElementById("detailOverlay")?.classList.add("open");
-  document.body.style.overflow = "hidden";
+  lockScroll();
 }
 
 // ─── CLOSE DETAIL PANEL ───────────────────────────────────────────────────
 function closeDetailPanel() {
   document.getElementById("detailPanel")?.classList.remove("open");
   document.getElementById("detailOverlay")?.classList.remove("open");
-  document.body.style.overflow = "";
+  unlockScroll();
   detailProductId = null;
 }
 
@@ -346,7 +347,7 @@ function detailOrder() {
 
   const qty         = detailQty || 1;
   const subtotal    = Number(p.price) * qty;
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const deliveryFee = calcDeliveryFee(subtotal);
   const total       = subtotal + deliveryFee;
 
   pendingOrderData = {
@@ -425,7 +426,7 @@ function openLightboxWithGallery(images, startIndex = 0) {
   currentGalleryIndex  = startIndex;
   updateLightboxImage();
   document.getElementById("lightbox")?.classList.add("open");
-  document.body.style.overflow = "hidden";
+  lockScroll();
 }
 
 function updateLightboxImage() {
@@ -441,7 +442,7 @@ function updateLightboxImage() {
 
 function closeLightbox() {
   document.getElementById("lightbox")?.classList.remove("open");
-  document.body.style.overflow = "";
+  unlockScroll();
 }
 
 function previousImage() {

@@ -216,9 +216,9 @@ function renderProducts(forceRebuild = false) {
   const isAdmin = document.body.classList.contains("is-admin");
   if (isAdmin) addAdminControls();
 
-  // Attach swatch click listeners via delegation — avoids inline onclick photo URL injection
-  grid.addEventListener('click', _handleSwatchClick, { once: false });
-  grid.addEventListener('keydown', _handleSwatchKeydown, { once: false });
+  // NOTE: swatch click/keydown listeners are attached once to the grid
+  // during page init (see initProductGrid in main.js) — not here on every
+  // render — so there is no listener accumulation on re-renders.
 }
 
 /**
@@ -282,7 +282,7 @@ function addAdminControls() {
     btns.innerHTML = `
       <button onclick="event.stopPropagation();toggleSold(${id})">Sold</button>
       <button onclick="event.stopPropagation();openEditPanel(${id})">Edit</button>
-      <button class="btn-danger" onclick="event.stopPropagation();deleteItem(${id})">✕</button>`;
+      <button class="btn-danger admin-delete-btn" onclick="event.stopPropagation();deleteItem(${id})">✕</button>`;
     card.appendChild(btns);
   });
 }

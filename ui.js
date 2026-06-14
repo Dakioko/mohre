@@ -92,6 +92,23 @@ function vibrateOnAction() {
   }
 }
 
+// ─── SCROLL LOCK ──────────────────────────────────────────────────────────
+// Reference-counted so that opening two panels (e.g. lightbox over cart)
+// and closing one doesn't accidentally re-enable scrolling while the other
+// is still open.
+let _scrollLockCount = 0;
+
+function lockScroll() {
+  if (++_scrollLockCount === 1) document.body.style.overflow = "hidden";
+}
+
+function unlockScroll() {
+  if (--_scrollLockCount <= 0) {
+    _scrollLockCount = 0; // guard against going negative
+    document.body.style.overflow = "";
+  }
+}
+
 // ─── TOAST ────────────────────────────────────────────────────────────────
 let toastTimeout;
 
@@ -160,16 +177,22 @@ function initBackToTop() {
 
 // ─── SCROLL TO SHOP ───────────────────────────────────────────────────────
 function scrollToShop() {
-  const el = document.getElementById("mainContent");
-  const header = document.getElementById("mainContent");
-  const stickyHeader = document.querySelector(".global-sticky-header");
-  const mobileSearchBar = document.getElementById("mobileSearchBar");
+  // Scroll to the section header (title + count + sort) rather than the
+  // top of #mainContent, so it's fully visible below all sticky elements.
+  const el = document.querySelector(".section-header") || document.getElementById("mainContent");
   if (!el) return;
-  const stickyH = stickyHeader ? stickyHeader.offsetHeight : 60;
+
+  const stickyHeader  = document.querySelector(".global-sticky-header");
+  const filterBar     = document.getElementById("categoryBarWrapper");
+  const mobileSearchBar = document.getElementById("mobileSearchBar");
+
+  const stickyH   = stickyHeader  ? stickyHeader.offsetHeight  : 60;
+  const filterH   = filterBar     ? filterBar.offsetHeight     : 0;
   const searchBarH = (mobileSearchBar && mobileSearchBar.offsetParent !== null)
     ? mobileSearchBar.offsetHeight : 0;
+
   const offset = el.getBoundingClientRect().top + window.pageYOffset
-    - stickyH - searchBarH - 10;
+    - stickyH - filterH - searchBarH - 4;
   window.scrollTo({ top: offset, behavior: "smooth" });
 }
 

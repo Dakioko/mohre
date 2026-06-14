@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Filter buttons
   initFilterButtons();
 
+  // 4. Product grid — attach swatch delegation listeners once so they
+  //    are not re-added on every renderProducts() call.
+  const productGrid = document.getElementById("productGrid");
+  if (productGrid) {
+    productGrid.addEventListener('click',   _handleSwatchClick);
+    productGrid.addEventListener('keydown', _handleSwatchKeydown);
+  }
+
   // 5. Back-to-top
   initBackToTop();
 

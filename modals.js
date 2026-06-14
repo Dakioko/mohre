@@ -82,7 +82,7 @@ function confirmOrder() {
   _closeSizeModalNow();
 
   const subtotal    = Number(p.price);
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const deliveryFee = calcDeliveryFee(subtotal);
   const total       = subtotal + deliveryFee;
 
   pendingOrderData = {
@@ -100,7 +100,7 @@ function directOrder(id) {
   if (!p) return;
 
   const subtotal    = Number(p.price);
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const deliveryFee = calcDeliveryFee(subtotal);
   const total       = subtotal + deliveryFee;
 
   pendingOrderData = {
@@ -218,48 +218,26 @@ function closeGuaranteeModal() {
 }
 
 // ─── RETURN POLICY MODAL ──────────────────────────────────────────────────
-function openReturnPolicy() {
-  // Reuse the guarantee modal structure with return-policy text
-  const modal = document.getElementById("guaranteeModal");
-  const content = modal?.querySelector(".auth-guarantee-modal");
-  if (!content) return;
+// The guarantee modal contains two inner sections: .guarantee-content and
+// .return-policy-content. Only one is visible at a time, toggled with the
+// "hidden" class — no innerHTML swapping, no race conditions.
 
-  content.innerHTML = `
-    <h3 class="modal-title">Returns & Exchanges</h3>
-    <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
-      We want you to love every piece. If something isn't right, contact us within <strong>48 hours</strong>
-      of receiving your order via WhatsApp.
-    </p>
-    <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
-      Items must be unworn, unwashed, and in original condition with tags intact.
-      Sale items and accessories are final sale.
-    </p>
-    <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
-      Exchanges subject to availability. Refunds processed within 5–7 business days.
-    </p>
-    <button class="btn-primary" style="width:100%;" onclick="closeReturnPolicy()">Got it</button>`;
+function openReturnPolicy() {
+  const modal = document.getElementById("guaranteeModal");
+  if (!modal) return;
+  modal.querySelector(".guarantee-content")?.classList.add("hidden");
+  modal.querySelector(".return-policy-content")?.classList.remove("hidden");
   modal.classList.add("open");
 }
 
 function closeReturnPolicy() {
   const modal = document.getElementById("guaranteeModal");
-  modal?.classList.remove("open");
-
-  // Restore original guarantee content after animation
-  setTimeout(() => {
-    const content = modal?.querySelector(".auth-guarantee-modal");
-    if (content) {
-      content.innerHTML = `
-        <h3 class="modal-title">Authenticity guaranteed</h3>
-        <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
-          Every item is personally sourced and verified by our team before listing.
-        </p>
-        <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
-          If you have concerns, contact us within 48 hours via WhatsApp — full refund or replacement.
-        </p>
-        <button class="btn-primary" style="width:100%;" onclick="closeGuaranteeModal()">Got it</button>`;
-    }
-  }, 300);
+  if (!modal) return;
+  modal.classList.remove("open");
+  // Restore to guarantee view for next open — safe to do immediately
+  // since the panel is already closing.
+  modal.querySelector(".return-policy-content")?.classList.add("hidden");
+  modal.querySelector(".guarantee-content")?.classList.remove("hidden");
 }
 
 // ─── SIZE GUIDE MODAL ─────────────────────────────────────────────────────

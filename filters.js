@@ -12,6 +12,11 @@ function setFilter(cat, btn) {
   renderProducts();
   scrollToShop();
   saveFilterPreference();
+
+  // Clear the search info bar — its result count is now stale since the
+  // category has changed but the search term is still active.
+  const bar = document.getElementById("searchInfoBar");
+  if (bar) bar.style.display = "none";
 }
 
 function initFilterButtons() {

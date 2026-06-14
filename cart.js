@@ -100,10 +100,11 @@ function wishlistMoveToCart(productId) {
   const sizes = p.sizes ? p.sizes.split(",").map(s => s.trim()).filter(Boolean) : [];
 
   if (sizes.length) {
-    // Product has sizes — close wishlist, open detail panel so user can pick one
+    // Product has sizes — close wishlist, open detail panel so user can pick one.
+    // Toast is shown after a short delay so the panel is visible when it appears.
     closeWishlist();
     openDetailPanel(productId);
-    showToast("Please choose a size to add to cart.");
+    setTimeout(() => showToast("Please choose a size to add to cart."), 300);
     return;
   }
 
@@ -117,13 +118,13 @@ function openWishlist() {
   renderWishlistBody();
   document.getElementById("wishlistDrawer")?.classList.add("open");
   document.getElementById("wishlistOverlay")?.classList.add("open");
-  document.body.style.overflow = "hidden";
+  lockScroll();
 }
 
 function closeWishlist() {
   document.getElementById("wishlistDrawer")?.classList.remove("open");
   document.getElementById("wishlistOverlay")?.classList.remove("open");
-  document.body.style.overflow = "";
+  unlockScroll();
 }
 
 // ─── WISHLIST STATE ────────────────────────────────────────────────────────
@@ -174,9 +175,9 @@ function updateCartBadge() {
 
 // ─── TOTALS ───────────────────────────────────────────────────────────────
 function updateCartWithDetails() {
-  const subtotal   = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
-  const total      = subtotal + deliveryFee;
+  const subtotal    = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
+  const deliveryFee = calcDeliveryFee(subtotal);
+  const total       = subtotal + deliveryFee;
 
   const subtotalEl = document.getElementById("cartSubtotal");
   const deliveryEl = document.getElementById("cartDelivery");
@@ -192,12 +193,12 @@ function updateCartWithDetails() {
 
   if (!progressDiv) return;
 
-  if (subtotal > 0 && subtotal < 5000) {
-    const remaining = 5000 - subtotal;
+  if (subtotal > 0 && subtotal < DELIVERY_FREE_THRESHOLD) {
+    const remaining = DELIVERY_FREE_THRESHOLD - subtotal;
     if (progressMsg)  progressMsg.innerHTML = `Add ${fmtPrice(remaining)} more for FREE delivery ✨`;
-    if (progressFill) progressFill.style.width = `${(subtotal / 5000) * 100}%`;
+    if (progressFill) progressFill.style.width = `${(subtotal / DELIVERY_FREE_THRESHOLD) * 100}%`;
     progressDiv.style.display = "block";
-  } else if (subtotal >= 5000) {
+  } else if (subtotal >= DELIVERY_FREE_THRESHOLD) {
     if (progressMsg)  progressMsg.innerHTML = "🎉 You qualify for FREE delivery!";
     if (progressFill) progressFill.style.width = "100%";
     progressDiv.style.display = "block";
@@ -286,42 +287,6 @@ function addToCart(productId, size, color) {
   vibrateOnAction();
 }
 
-function removeFromCart(idx) {
-  // Resolve to a stable object reference before mutating so that rapid
-  // re-renders between click and execution can't shift the wrong item out.
-  const item = cart[idx];
-  if (!item) return;
-  cart = cart.filter(c => c !== item);
-  saveCart();
-  updateCartBadge();
-  renderCartBody();
-}
-
-/**
- * Change quantity of a cart item by delta.
- * At qty 1, decreasing removes the item after a brief confirmation flash
- * on the button rather than silently clamping — consistent with standard
- * cart behaviour.
- */
-function changeCartQty(idx, delta) {
-  const item = cart[idx];
-  if (!item) return;
-
-  if (delta < 0 && (item.qty || 1) <= 1) {
-    // Already at minimum — remove the item by object reference
-    cart = cart.filter(c => c !== item);
-    saveCart();
-    updateCartBadge();
-    renderCartBody();
-    return;
-  }
-
-  item.qty = (item.qty || 1) + delta;
-  saveCart();
-  updateCartBadge();
-  renderCartBody();
-}
-
 // ─── STABLE CART KEY ─────────────────────────────────────────────────────
 /**
  * Build a stable string key for a cart item based on its product ID,
@@ -393,7 +358,7 @@ function renderCartBody() {
       <div class="cart-item-info">
         <p class="cart-item-name">${escapeHtml(item.name)}</p>
         <p class="cart-item-meta">
-          ${[item.size, item.color].filter(Boolean).map(escapeHtml).join(' · ') || 'No size / colour selected'}
+          ${[item.size, item.color].filter(Boolean).map(escapeHtml).join(' · ') || 'One size'}
         </p>
         <p class="cart-item-price">${fmtPrice(item.price)}</p>
         <div class="cart-qty-row">
@@ -422,13 +387,13 @@ function openCart() {
   renderCartBody();
   document.getElementById("cartDrawer")?.classList.add("open");
   document.getElementById("cartOverlay")?.classList.add("open");
-  document.body.style.overflow = "hidden";
+  lockScroll();
 }
 
 function closeCart() {
   document.getElementById("cartDrawer")?.classList.remove("open");
   document.getElementById("cartOverlay")?.classList.remove("open");
-  document.body.style.overflow = "";
+  unlockScroll();
 }
 
 // ─── CHECKOUT ─────────────────────────────────────────────────────────────
@@ -438,7 +403,7 @@ function checkoutCart() {
   if (cart.length === 0) return;
 
   const subtotal    = cart.reduce((s, c) => s + Number(c.price) * (c.qty || 1), 0);
-  const deliveryFee = subtotal > 5000 ? 0 : 200;
+  const deliveryFee = calcDeliveryFee(subtotal);
   const total       = subtotal + deliveryFee;
 
   const orderItems = cart.map(c => ({

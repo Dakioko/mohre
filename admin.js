@@ -143,42 +143,7 @@ async function handleVariantImageFile(input, idx) {
 }
 
 // ─── COLOR NAME → HEX LOOKUP ─────────────────────────────────────────────
-// Type a name, get a hex. Reverse of the old flow.
-const COLOR_NAME_TO_HEX = {
-  "black":"#000000","jet black":"#1a1a1a","charcoal":"#333333","dark charcoal":"#333333",
-  "dim grey":"#555555","dim gray":"#555555","grey":"#777777","gray":"#777777",
-  "medium grey":"#888888","medium gray":"#888888","silver grey":"#999999","silver gray":"#999999",
-  "silver":"#aaaaaa","light silver":"#bbbbbb","light grey":"#cccccc","light gray":"#cccccc",
-  "pale grey":"#dddddd","pale gray":"#dddddd","off white":"#eeeeee","ghost white":"#f5f5f5","white":"#ffffff",
-  "red":"#ff0000","dark red":"#cc0000","crimson":"#990000","coral red":"#ff4444",
-  "light red":"#ff6666","blush":"#ff9999","pale pink":"#ffcccc",
-  "hot pink":"#ff69b4","deep pink":"#ff1493","berry":"#c71585",
-  "salmon":"#ff6b6b","rose":"#e8748a","dusty rose":"#c9536a","blush pink":"#ffb6c1",
-  "dark orange":"#ff8c00","burnt orange":"#ff6600","orange red":"#ff4500",
-  "orange":"#ffa500","peach":"#ffb347","gold":"#ffd700","yellow":"#ffff00",
-  "lemon":"#f5e642","cream":"#fffacd","ivory":"#f5f0e8","antique white":"#faebd7",
-  "saddle brown":"#8b4513","sienna":"#a0522d","peru":"#cd853f","burlywood":"#deb887",
-  "tan":"#d2b48c","sand":"#c8a882","champagne":"#e8d5b0","wheat":"#f5deb3","camel":"#c19a6b",
-  "dark green":"#006400","green":"#008000","forest green":"#228b22",
-  "sea green":"#2e8b57","medium green":"#3cb371","light green":"#90ee90",
-  "pale green":"#98fb98","yellow green":"#adff2f","olive green":"#556b2f",
-  "olive":"#808000","moss green":"#6b8e23","sage":"#8fbc8f","mint":"#98ff98",
-  "teal":"#008080","light teal":"#20b2aa","turquoise":"#40e0d0","cyan":"#00bcd4",
-  "navy":"#000080","dark blue":"#00008b","medium blue":"#0000cd","blue":"#0000ff",
-  "royal blue":"#4169e1","cornflower blue":"#6495ed","sky blue":"#87ceeb",
-  "light blue":"#add8e6","steel blue":"#b0c4de","baby blue":"#89cff0",
-  "midnight blue":"#191970","deep navy":"#1e3a5f","denim":"#1560bd","cobalt":"#0047ab",
-  "indigo":"#4b0082","dark violet":"#9400d3","purple":"#800080",
-  "dark orchid":"#9932cc","medium orchid":"#ba55d3","plum":"#dda0dd",
-  "violet":"#ee82ee","orchid":"#da70d6","magenta":"#ff00ff","lavender":"#e6e6fa",
-  "lilac":"#c8a2c8","mauve":"#e0b0ff",
-  "burgundy":"#800020","wine":"#722f37","brown":"#a52a2a","maroon":"#800000",
-  "dark goldenrod":"#b8860b","warm taupe":"#8c7e6c","taupe":"#a89b8a",
-  "linen":"#d4c9bc","pearl":"#e8e0d5","eggshell":"#f0ebe3","nude":"#e3bc9a",
-  "mustard":"#ffdb58","terracotta":"#e2725b","rust":"#b7410e","copper":"#b87333",
-  "emerald":"#50c878","jade":"#00a86b","khaki":"#c3b091","beige":"#f5f5dc",
-  "chocolate":"#7b3f00","coffee":"#6f4e37","mocha":"#967259",
-};
+// The COLOR_NAME_TO_HEX lookup table lives in config.js — see that file.
 
 function colorNameToHex(name) {
   return COLOR_NAME_TO_HEX[name.toLowerCase().trim()] || null;
@@ -397,11 +362,72 @@ function openEditPanel(id) {
 }
 
 // ─── DELETE ───────────────────────────────────────────────────────────────
-async function deleteItem(id) {
-  if (!confirm("Remove this item from the collection?")) return;
+/**
+ * Two-step delete: first tap turns the ✕ button into a "Confirm?" prompt.
+ * A second tap within 3 seconds executes the delete. Any other interaction
+ * resets the button automatically — no native confirm() dialog needed.
+ */
+function deleteItem(id) {
+  const card = document.querySelector(`.product-card[data-id="${id}"]`);
+  const btn  = card?.querySelector('.admin-delete-btn');
+  if (!btn) return;
+
+  if (btn.dataset.confirming === 'true') {
+    // Second tap — execute delete
+    _executeDelete(id);
+    return;
+  }
+
+  // First tap — enter confirmation state
+  btn.dataset.confirming = 'true';
+  btn.textContent = 'Sure?';
+  btn.style.background = 'var(--danger, #e53e3e)';
+  btn.style.color = '#fff';
+
+  // Auto-reset after 3 seconds if no second tap
+  const timer = setTimeout(() => _resetDeleteBtn(btn), 3000);
+  btn.dataset.confirmTimer = timer;
+
+  // Reset if the user clicks anywhere else
+  const reset = e => {
+    if (!btn.contains(e.target)) {
+      _resetDeleteBtn(btn);
+      document.removeEventListener('click', reset);
+    }
+  };
+  document.addEventListener('click', reset);
+}
+
+function _resetDeleteBtn(btn) {
+  clearTimeout(btn.dataset.confirmTimer);
+  btn.dataset.confirming = 'false';
+  btn.textContent = '✕';
+  btn.style.background = '';
+  btn.style.color = '';
+}
+
+async function _executeDelete(id) {
   try {
     await apiPost({ action: "deleteProduct", id });
     products = products.filter(p => p.id !== id);
+
+    // Remove from cart if present
+    const cartBefore = cart.length;
+    cart = cart.filter(c => c.id !== id);
+    if (cart.length !== cartBefore) {
+      saveCart();
+      updateCartBadge();
+      renderCartBody();
+    }
+
+    // Remove from wishlist if present
+    const wishlistBefore = wishlist.length;
+    wishlist = wishlist.filter(w => w.id !== id);
+    if (wishlist.length !== wishlistBefore) {
+      saveWishlist();
+      updateWishlistBadge();
+    }
+
     renderProducts();
     showToast("Item removed.");
   } catch {
@@ -727,14 +753,53 @@ function renderBulkActionBar() {
     document.body.appendChild(bar);
   }
 
-  const count = adminSelectedIds.size;
+  const count    = adminSelectedIds.size;
+  const total    = products.filter(p => !p.isSold).length; // visible, non-sold cards
+  const allSelected = count === total && total > 0;
+
   bar.innerHTML = `
-    <span class="bulk-action-count">${count} selected</span>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <span class="bulk-action-count">${count} selected</span>
+      <button class="btn-ghost" style="font-size:0.72rem;padding:0.2rem 0.5rem;"
+        onclick="${allSelected ? 'bulkDeselectAll()' : 'bulkSelectAll()'}">
+        ${allSelected ? 'Deselect all' : 'Select all'}
+      </button>
+    </div>
     <div class="bulk-action-buttons">
       <button class="btn-ghost" ${count === 0 ? 'disabled' : ''} onclick="bulkSetSold(true)">Mark Sold</button>
       <button class="btn-ghost" ${count === 0 ? 'disabled' : ''} onclick="bulkSetSold(false)">Mark Available</button>
       <button class="btn-primary" onclick="toggleAdminSelectMode()">Done</button>
     </div>`;
+}
+
+/**
+ * Select all currently visible (non-sold) product cards.
+ */
+function bulkSelectAll() {
+  products.filter(p => !p.isSold).forEach(p => {
+    adminSelectedIds.add(p.id);
+    const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
+    if (card) {
+      card.classList.add('selected-for-bulk');
+      card.setAttribute('aria-pressed', 'true');
+    }
+  });
+  renderBulkActionBar();
+}
+
+/**
+ * Deselect all currently selected cards.
+ */
+function bulkDeselectAll() {
+  adminSelectedIds.forEach(id => {
+    const card = document.querySelector(`.product-card[data-id="${id}"]`);
+    if (card) {
+      card.classList.remove('selected-for-bulk');
+      card.setAttribute('aria-pressed', 'false');
+    }
+  });
+  adminSelectedIds.clear();
+  renderBulkActionBar();
 }
 
 /**
