@@ -17,7 +17,7 @@
   --font-product:  'DM Sans', sans-serif;
   --nav-h:         60px;
   --filter-h:      42px;
-  --search-h:      42px;
+  --search-h:      56px; /* 40px input + 8px top padding + 8px bottom padding */
   --section-h:     60px;
   --shimmer-from:  #eae8e4;
   --shimmer-to:    #f5f3f0;
