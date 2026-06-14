@@ -239,7 +239,8 @@
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
         height: calc(100vh - 108px);
-        min-height: 480px;
+        min-height: 380px;
+        max-height: 520px;
       }
 
       /* Carousel fills most of the hero */
@@ -255,7 +256,12 @@
         display: none;
       }
 
-      /* Hide old mobile search toggle icon — replaced by persistent bar */
+      /* Two-column product grid on all mobile sizes */
+      .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem;
+        padding: 0 0.75rem 3rem;
+      }
       .mobile-search-toggle { display: none !important; }
       .mobile-search-overlay { display: none !important; }
 
