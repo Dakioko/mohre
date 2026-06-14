@@ -104,15 +104,6 @@ function openDetailPanel(id) {
   const infoHTML = `
     <div class="detail-info-col">
       <div class="detail-info-top">
-        <div class="detail-top-actions">
-          <button class="detail-share-btn" onclick="shareProduct()">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-            </svg>
-            Share
-          </button>
-        </div>
         <p class="detail-category-label">${escapeHtml(p.category)}</p>
         <h2 class="detail-name">${escapeHtml(p.name)}</h2>
         <p class="detail-price">${fmtPrice(p.price)}</p>
