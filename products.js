@@ -45,8 +45,8 @@ function isNewArrival(product) {
  */
 function getFiltered() {
   let base =
-    currentFilter === "All"  ? products.filter(p => !p.isSold) :
     currentFilter === "New"  ? products.filter(p => isNewArrival(p) && !p.isSold) :
+    currentFilter === "Sold" ? products.filter(p => p.isSold) :
     products.filter(p => p.category === currentFilter && !p.isSold);
 
   if (currentSearch) {
@@ -111,7 +111,7 @@ function renderProducts(forceRebuild = false) {
   if (titleEl) {
     titleEl.innerHTML = currentSearch
       ? `Results for "${escapeHtml(searchVal)}"`
-      : currentFilter !== "All" ? currentFilter : "All Collection";
+      : currentFilter;
   }
 
   const countEl = document.getElementById("sectionCount");
@@ -290,9 +290,14 @@ function addAdminControls() {
     if (!id || card.querySelector('.admin-card-btns')) return;
     const btns = document.createElement('div');
     btns.className = 'admin-card-btns';
+    const p = products.find(x => x.id === id);
+    const isF = p && p.isFeatured;
+    const soldLabel = p && p.isSold ? 'Available' : 'Sold';
     btns.innerHTML = `
-      <button onclick="event.stopPropagation();toggleSold(${id})">Sold</button>
+      <button onclick="event.stopPropagation();toggleSold(${id})">${soldLabel}</button>
       <button onclick="event.stopPropagation();openEditPanel(${id})">Edit</button>
+      <button class="admin-feature-btn${isF ? ' featured' : ''}" title="${isF ? 'Unfeature' : 'Feature in hero'}"
+        onclick="event.stopPropagation();toggleFeatured(${id})">⭐</button>
       <button class="btn-danger admin-delete-btn" onclick="event.stopPropagation();deleteItem(${id})">✕</button>`;
     card.appendChild(btns);
   });

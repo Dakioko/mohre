@@ -76,7 +76,7 @@ const COLOR_NAME_TO_HEX = {
 
 // ─── GLOBAL STATE ─────────────────────────────────────────────────────────
 let products = [];
-let currentFilter = "All";
+let currentFilter = "New";
 let currentSearch = "";
 let currentSort   = "newest"; // "default" | "price-asc" | "price-desc" | "newest"
 let pendingOrderId = null;

@@ -31,9 +31,28 @@
    * Picks up to 3 products with photos and builds the carousel.
    */
   window.initHeroCarousel = function (products) {
-    const pool = products
-      .filter(p => !p.isSold && p.photo)
+    // Featured products sorted by featuredAt descending — most recently starred win.
+    // Falls back to newest unsold products if fewer than 3 are featured.
+    const featured = products
+      .filter(p => !p.isSold && p.isFeatured && (p.photo || _parseJSON(p.variants, []).some(v => v.photo)))
+      .sort((a, b) => new Date(b.featuredAt || 0) - new Date(a.featuredAt || 0))
       .slice(0, 3);
+
+    const fallback = products
+      .filter(p => !p.isSold && (p.photo || _parseJSON(p.variants, []).some(v => v.photo)) && !p.isFeatured)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const pool = [...featured, ...fallback].slice(0, 3);
+
+    // Resolve the display image — use primary photo or first variant photo
+    pool.forEach(p => {
+      if (!p.photo) {
+        const v = _parseJSON(p.variants, []).find(v => v.photo);
+        if (v) p._heroPhoto = v.photo;
+      } else {
+        p._heroPhoto = p.photo;
+      }
+    });
 
     const wrapper    = document.getElementById('heroSlideWrapper');
     const indicators = document.getElementById('heroIndicators');
@@ -41,7 +60,7 @@
 
     wrapper.innerHTML = pool.map((p, i) => `
       <img class="slide-img${i === 0 ? ' active' : ''}"
-        src="${p.photo}"
+        src="${p._heroPhoto || p.photo}"
         alt="${p.name}"
         onerror="this.style.display='none'">`
     ).join('');

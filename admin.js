@@ -75,9 +75,6 @@ function resetAdminForm() {
   const cat = document.getElementById("itemCat");
   if (cat) cat.value = "Women";
 
-  const fit = document.getElementById("itemShoeFit");
-  if (fit) fit.value = "Unisex";
-
   const preview = document.getElementById("adminImgPreview");
   if (preview) preview.style.display = "none";
 
@@ -95,7 +92,6 @@ function onCategoryChange(cat) {
   const isAcc   = cat === "Accessories";
   document.getElementById("sizesClothingGroup")?.classList.toggle("size-field-hidden", isShoes || isAcc);
   document.getElementById("sizesShoesGroup")?.classList.toggle("size-field-hidden", !isShoes);
-  document.getElementById("shoeGenderGroup")?.classList.toggle("size-field-hidden", !isShoes);
 }
 
 // ─── COLOUR VARIANTS ──────────────────────────────────────────────────────
@@ -288,7 +284,7 @@ async function submitItem() {
       showToast("✅ Item updated.");
     } else {
       await apiPost({ action: "addProduct", product });
-      showToast("✨ Item added!");
+      showToast("✨ Item added! Tap ⭐ on the card to feature it in the hero.");
     }
     cancelAdminPanel();
     await loadProducts();
@@ -445,6 +441,47 @@ async function toggleSold(id) {
     showToast(result.isSold ? "Marked as sold." : "Back in collection.");
   } catch {
     showToast("Couldn't update item.");
+  }
+}
+
+// ─── TOGGLE FEATURED ──────────────────────────────────────────────────────
+async function toggleFeatured(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+
+  const newVal = !p.isFeatured;
+
+  // Enforce max 3 featured at once
+  if (newVal && products.filter(x => x.isFeatured && x.id !== id).length >= 3) {
+    showToast("Max 3 featured products. Unfeature one first.");
+    return;
+  }
+
+  // Send the full product object with isFeatured toggled — the backend
+  // expects a complete product, not a partial patch.
+  // featuredAt is stamped when featuring, cleared when unfeaturing so the
+  // carousel can rank by most recently starred.
+  const fullProduct = {
+    name:       p.name,
+    price:      p.price,
+    category:   p.category,
+    sizes:      p.sizes     || "",
+    desc:       p.desc      || "",
+    photo:      p.photo     || "",
+    variants:   p.variants  || "",
+    photos:     p.photos    || "",
+    stock:      p.stock     || 10,
+    isFeatured: newVal,
+    featuredAt: newVal ? new Date().toISOString() : "",
+  };
+
+  try {
+    await apiPost({ action: "updateProduct", id, product: fullProduct });
+    p.isFeatured = newVal;
+    renderProducts(true);
+    showToast(newVal ? "⭐ Added to hero carousel." : "Removed from hero carousel.");
+  } catch {
+    showToast("Couldn't update. Try again.");
   }
 }
 
@@ -624,6 +661,24 @@ function _activateAdminUI() {
   if (addBtn) addBtn.style.display = "flex";
   const selectBtn = document.getElementById("adminSelectBtn");
   if (selectBtn) selectBtn.style.display = "flex";
+
+  // Inject Sold filter tab — only visible in admin mode
+  if (!document.getElementById("soldFilterBtn")) {
+    const filterBar = document.querySelector(".filter-bar");
+    if (filterBar) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "soldFilterBtn";
+      btn.className = "filter-btn admin-only-filter";
+      btn.setAttribute("data-category", "Sold");
+      btn.setAttribute("role", "tab");
+      btn.textContent = "Sold";
+      btn.addEventListener("click", () => setFilter("Sold", btn));
+      filterBar.appendChild(btn);
+      initFilterButtons(); // re-bind so the new button gets click handler
+    }
+  }
+
   renderProducts();
 }
 
@@ -637,6 +692,12 @@ function _deactivateAdminUI() {
   if (adminSelectMode) toggleAdminSelectMode();
   document.getElementById("adminPanel")?.classList.remove("visible");
   document.querySelectorAll('.admin-card-btns').forEach(el => el.remove());
+
+  // Remove Sold filter tab and reset to All if it was active
+  const soldBtn = document.getElementById("soldFilterBtn");
+  if (soldBtn) soldBtn.remove();
+  if (currentFilter === "Sold") setFilter("New", document.querySelector('.filter-btn[data-category="New"]'));
+
   renderProducts();
   showToast("Logged out.");
 }
@@ -754,8 +815,9 @@ function renderBulkActionBar() {
   }
 
   const count    = adminSelectedIds.size;
-  const total    = products.filter(p => !p.isSold).length; // visible, non-sold cards
-  const allSelected = count === total && total > 0;
+  const visible  = getFiltered(); // respects active category, search and sort
+  const total    = visible.length;
+  const allSelected = total > 0 && visible.every(p => adminSelectedIds.has(p.id));
 
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -773,10 +835,10 @@ function renderBulkActionBar() {
 }
 
 /**
- * Select all currently visible (non-sold) product cards.
+ * Select all currently visible cards — respects active filter/search.
  */
 function bulkSelectAll() {
-  products.filter(p => !p.isSold).forEach(p => {
+  getFiltered().forEach(p => {
     adminSelectedIds.add(p.id);
     const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
     if (card) {

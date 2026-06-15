@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. Theme
   initDarkMode();
 
-  // 1b. Restore admin session if token is still valid
+  // 1b. Inject admin nav buttons first so they exist in the DOM,
+  //     then restore session — _activateAdminUI can find them immediately.
+  injectAdminNavButton();
+  initAdminTrigger();
   restoreAdminSession();
 
   // 2. Cart badge + render (restores persisted cart)
@@ -28,9 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. Back-to-top
   initBackToTop();
 
-  // 7. Admin trigger (logo triple-tap)
-  injectAdminNavButton();
-  initAdminTrigger();
+  // 7. (Admin buttons and trigger already initialised above)
 
   // 8. Swipe-to-close gestures on panels
   const cartDrawer  = document.getElementById("cartDrawer");

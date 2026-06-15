@@ -66,18 +66,18 @@ function clearSearch() {
 }
 
 function resetViewToShop() {
-  setFilter("All", document.querySelector('.filter-btn[data-category="All"]'));
+  setFilter("New", document.querySelector('.filter-btn[data-category="New"]'));
   clearSearch();
 }
 
 function clearCategoryFilter() {
-  setFilter("All", document.querySelector('.filter-btn[data-category="All"]'));
+  setFilter("New", document.querySelector('.filter-btn[data-category="New"]'));
 }
 
 // ─── PERSIST / RESTORE FILTER PREFERENCES ────────────────────────────────
 function saveFilterPreference() {
   try {
-    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter, sort: currentSort, savedAt: Date.now() }));
+    localStorage.setItem('filterPreference', JSON.stringify({ category: currentFilter, savedAt: Date.now() }));
   } catch (e) {}
 }
 
@@ -91,12 +91,7 @@ function applySavedFilters() {
       localStorage.removeItem('filterPreference');
       return;
     }
-    if (prefs.sort) {
-      currentSort = prefs.sort;
-      const sortEl = document.getElementById("sortSelect");
-      if (sortEl) sortEl.value = currentSort;
-    }
-    if (prefs.category && prefs.category !== 'All') {
+    if (prefs.category && prefs.category !== 'New') {
       const filterBtn = document.querySelector(`.filter-btn[data-category="${prefs.category}"]`);
       if (filterBtn) setFilter(prefs.category, filterBtn);
     }

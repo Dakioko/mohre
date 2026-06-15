@@ -211,7 +211,8 @@ function closeMobileSearch() {
   const actions = document.querySelector(".nav-actions");
   if (!overlay) return;
   overlay.classList.remove("open");
-  if (actions) actions.style.visibility = "";
+  // Always explicitly restore visibility — never leave it hidden
+  if (actions) actions.style.visibility = "visible";
   const input = document.getElementById("mobileSearch");
   if (input && !input.value) clearSearch();
 }
